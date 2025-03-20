@@ -1,0 +1,28 @@
+# Common
+.DS_Store
+Thumbs.db
+*.swp
+*.log
+node_modules/
+.env
+.venv
+venv/
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+
+# Flask API
+/api/instance
+/api/.venv
+/api/__pycache__
+/api/*.pyc
+/api/*.log
+/api/*.egg-info
+
+# React Frontend
+/frontend/node_modules
+/frontend/build
+/frontend/.env
+/frontend/.cache
