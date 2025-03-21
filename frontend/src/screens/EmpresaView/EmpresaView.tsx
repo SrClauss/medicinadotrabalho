@@ -22,7 +22,7 @@ import {
   Fab,
 } from "@mui/material";
 import SearchBar from "../../components/SearchBar/SearchBar";
-import { Info, EventNote, Delete, Edit, Add } from "@mui/icons-material";
+import { Info, EventNote, Delete, Edit, Add, CalendarToday } from "@mui/icons-material";
 import TitleForm from "../../components/TitleForm/TitleForm";
 import { useEffect, useState, useCallback } from "react";
 import { useUser } from "../../contexts/UserContext/UserContext";
@@ -187,7 +187,7 @@ export default function EmpresaView() {
   return (
     <Container>
       <Paper elevation={3}>
-        <TitleForm title="Visualizar Empresas" id="title-visualizar-empresa" />
+        <TitleForm title="Gerenciamento de Empresas" id="title-visualizar-empresa" />
         <SearchBar onSearch={handleSearch} label="Pesquisar" />
         <Box sx={{ padding: 2 }}>
           {/* Controles de paginação no início da tabela */}
@@ -221,6 +221,16 @@ export default function EmpresaView() {
                           to={`/agendamento-empresa/${empresa.id}`}
                         >
                           <EventNote color="warning" />
+                        </IconButton>
+                      </Tooltip>
+
+
+                      <Tooltip title="Ver agendamentos">
+                        <IconButton
+                          component={Link}
+                          to={`/ver-agendamentos-por-empresa/${empresa.id}/${encodeURIComponent(empresa.name)}`}
+                        >
+                          <CalendarToday color="warning" />
                         </IconButton>
                       </Tooltip>
                       {isAdmin() && (

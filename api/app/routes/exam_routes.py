@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, current_app
 from app.models.exam import Exam
 from app.models.user import User
 from app import get_db
-from datetime import datetime
+from datetime import datetime, timedelta
 import ulid
 from sqlalchemy import distinct
 
@@ -447,3 +447,73 @@ def criar_exames_em_lote():
         db.rollback()
         current_app.logger.error(f"Erro ao criar exames em lote: {str(e)}")
         return jsonify({"erro": f"Erro ao criar exames em lote: {str(e)}"}), 500
+    
+
+# Rota para listar exames por empresa entre duas datas (recebendo parâmetros via query string)
+@exam_bp.route('/exames/listar_por_empresa_e_datas', methods=['GET'])
+def listar_por_empresa_e_datas():
+    try:
+        db = get_db()
+        data = request.args  # Obter os dados da query string
+
+        company_id = data.get('company_id')
+        data_inicial_str = data.get('data_inicial')
+        data_final_str = data.get('data_final')
+
+        # Definir datas padrão
+        hoje = datetime.today().date()
+        data_inicial = datetime.strptime(data_inicial_str, '%Y-%m-%d').date() if data_inicial_str else hoje
+        data_final = datetime.strptime(data_final_str, '%Y-%m-%d').date() if data_final_str else hoje + timedelta(days=3650)  # Hoje + 10 anos
+
+        # Validar se company_id foi fornecido
+        if not company_id:
+            return jsonify({"erro": "company_id é obrigatório"}), 400
+
+        # Construir a query
+        query = db.query(Exam).filter(
+            Exam.company_id == company_id,
+            Exam.exam_date >= data_inicial,
+            Exam.exam_date <= data_final
+        )
+
+        # Executar a query
+        exames = query.all()
+
+        # Serializar os resultados
+        exam_list = []
+        for exam in exames:
+            # Buscar informações do usuário
+            user = db.query(User).get(exam.user_id)
+            user_data = None
+            if user:
+                user_data = {
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "cpf": user.cpf,
+                    "address": user.address,
+                    "phone": user.phone,
+                    "ativo": user.ativo,
+                    "role": user.role,
+                    "created_at": user.created_at.isoformat(),
+                    "updated_at": user.updated_at.isoformat()
+                }
+
+            exam_list.append({
+                "id": exam.id,
+                "description": exam.description,
+                "image_uploaded": exam.image_uploaded,
+                "company_id": exam.company_id,
+                "user": user_data,  # Adiciona os dados do usuário
+                "created_at": exam.created_at.isoformat(),
+                "updated_at": exam.updated_at.isoformat(),
+                "exam_date": exam.exam_date.isoformat() if exam.exam_date else None
+            })
+
+        return jsonify({"list": exam_list}), 200
+
+    except ValueError as ve:
+        return jsonify({"erro": f"Erro ao processar datas: {str(ve)}. Use o formato YYYY-MM-DD."}), 400
+    except Exception as e:
+        current_app.logger.error(f"Erro ao listar exames por empresa e datas: {str(e)}")
+        return jsonify({"erro": "Erro ao listar exames por empresa e datas"}), 500

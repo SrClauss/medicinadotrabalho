@@ -15,6 +15,7 @@ import RedefineSenhaEmpresa from './screens/RedefineSenha/RedefineSenhaEmpresa';
 import LoginScreen from './screens/LoginScreen/LoginScreen';
 import RecuperacaoSenha from './screens/RecuperacaoSenha/RecuperacaoSenha';
 import AgendamentoPorEmpresa from './screens/AgendamentoPorEmpresa/AgendamentoPorEmpresa';
+import VerAgendamentosPorEmpresa from './screens/VerAgendamentosPorEmpresa/VerAgendamentosPorEmpresa';
 export function App() {
   return (
     <ThemeProvider>
@@ -34,6 +35,7 @@ export function App() {
             <Route path="/empresas/:searchTerm?" element={<MainLayout><EmpresaView /></MainLayout>} />
             <Route path="/redefine-senha" element={<OfflineLayout><RecuperacaoSenha /></OfflineLayout>} />
             <Route path="/agendamento-empresa/:companyId" element={<MainLayout><AgendamentoPorEmpresa /></MainLayout>} />
+            <Route path="/ver-agendamentos-por-empresa/:companyId/:companyName" element={<MainLayout><VerAgendamentosPorEmpresa /></MainLayout>} />
           </Routes>
         </UserProvider>
       </Router>

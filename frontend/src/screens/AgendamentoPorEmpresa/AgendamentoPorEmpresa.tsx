@@ -231,6 +231,8 @@ export default function AgendamentoPorEmpresa() {
       }
       return [...prev, user];
     });
+    setShowSearchResults(false);
+
     // Neste fluxo, os resultados de pesquisa permanecem visíveis até que o usuário feche
   };
 
