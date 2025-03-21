@@ -9,25 +9,34 @@ import CadastroUsuario from './screens/CadastroUsuario/CadastroUsuario';
 import RedefineSenha from './screens/RedefineSenha/RedefineSenha';
 import OfflineLayout from './layouts/OfflineLayout/OfflineLayout';
 import UsuarioView from './screens/UsuarioView/UsuarioView';
-
+import CadastroEmpresa from './screens/CadastroEmpresa/CadastroEmpresa';
+import EmpresaView from './screens/EmpresaView/EmpresaView';
+import RedefineSenhaEmpresa from './screens/RedefineSenha/RedefineSenhaEmpresa';
+import LoginScreen from './screens/LoginScreen/LoginScreen';
+import RecuperacaoSenha from './screens/RecuperacaoSenha/RecuperacaoSenha';
 export function App() {
   return (
-    <UserProvider>
-      <ThemeProvider>
-        <CssBaseline />
-        <Router>
+    <ThemeProvider>
+      <CssBaseline />
+      <Router>
+        <UserProvider>
           <Routes>
-            <Route path="/" element={<MainLayout><Main/></MainLayout>} />
-            <Route path="/cadastro-usuario" element={<MainLayout><CadastroUsuario/></MainLayout>} />
+            <Route path="/" element={<MainLayout><Main /></MainLayout>} />
+            <Route path="/login" element={<OfflineLayout><LoginScreen /></OfflineLayout>} />
+            <Route path="/redefine-senha/:token" element={<OfflineLayout><RedefineSenha /></OfflineLayout>} />
+            <Route path="/redefine-senha-empresa/:token" element={<OfflineLayout><RedefineSenhaEmpresa /></OfflineLayout>} />
+            <Route path="/cadastro-usuario" element={<MainLayout><CadastroUsuario /></MainLayout>} />
             <Route path="/editar-usuario/:id" element={<MainLayout><CadastroUsuario /></MainLayout>} />
-            <Route path="/login" element={<div>login</div>} />
-            <Route path="/redefine-senha/:token" element={<OfflineLayout><RedefineSenha/></OfflineLayout>} />
-            <Route path="/usuario-view" element={<MainLayout><UsuarioView/></MainLayout>} />
             <Route path="/usuarios/:searchTerm?" element={<MainLayout><UsuarioView /></MainLayout>} />
+            <Route path="/cadastro-empresa" element={<MainLayout><CadastroEmpresa /></MainLayout>} />
+            <Route path="/editar-empresa/:id" element={<MainLayout><CadastroEmpresa /></MainLayout>} />
+            <Route path="/empresas/:searchTerm?" element={<MainLayout><EmpresaView /></MainLayout>} />
+            <Route path="/redefine-senha" element={<OfflineLayout><RecuperacaoSenha /></OfflineLayout>} />
+
           </Routes>
-        </Router>
-      </ThemeProvider>
-    </UserProvider>
+        </UserProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
 

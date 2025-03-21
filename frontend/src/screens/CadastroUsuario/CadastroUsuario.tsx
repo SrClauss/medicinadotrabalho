@@ -53,7 +53,25 @@ export default function CadastroUsuario() {
         .then((response) => response.json())
         .then((data) => {
           setUser(data);
-          setAdresses(JSON.parse(data.address).map((adress: any) => Endereco.newFromObject(adress))) // Assumindo que o backend retorna os endereços no campo 'address'
+          // Processar o address apropriadamente
+          if (data.address) {
+            try {
+              // Verificar se já é um array ou se precisa de parse
+              const parsedAddress = Array.isArray(data.address) 
+                ? data.address 
+                : typeof data.address === 'string' 
+                  ? JSON.parse(data.address) 
+                  : data.address;
+              
+              if (Array.isArray(parsedAddress)) {
+                setAdresses(parsedAddress.map((address) => Endereco.newFromObject(address)));
+              } else {
+                setAdresses([Endereco.newFromObject(parsedAddress)]);
+              }
+            } catch (e) {
+              console.error("Erro ao analisar o endereço:", e);
+            }
+          }
         })
         .catch((error) => {
           setAlert({
@@ -87,14 +105,14 @@ export default function CadastroUsuario() {
         },
         body: JSON.stringify({
           ...user,
-          address: adresses,
+          address: adresses, // Enviar como array diretamente
         }),
       });
 
       if (response.ok) {
         setAlert({
           open: true,
-          message: `Usuário ${id ? "atualizado" : "cadastrado"} com sucesso!`,
+          message: id? `Usuário ${id} atualizado com sucesso!` : "Usuário cadastrado com sucesso! Verifique sua caixa de email",
           severity: "success",
         });
         // Redireciona para UsuarioView com o nome do usuário como searchTerm

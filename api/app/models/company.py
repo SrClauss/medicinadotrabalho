@@ -16,7 +16,7 @@ class Company(Base):
     __tablename__ = 'companies'
     id = Column(String(26), primary_key=True, default=lambda: str(ulid.new()))
     name = Column(String(100), nullable=False)
-    address = Column(JSON, nullable=False)
+    address = Column(JSON, nullable=True)
     phone = Column(String(20), nullable=False)
     cnpj = Column(String(14), unique=True, nullable=False)
     email = Column(String(120), unique=True, nullable=False)
@@ -50,12 +50,21 @@ class Company(Base):
             'cnpj': self.cnpj,
             'email': self.email,
             'ativo': self.ativo,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+    
+    def to_dto(self):
+        return CompanyDTO(
+            email=self.email,
+            name=self.name,
+            address=self.address,
+            phone=self.phone,
+            cnpj=self.cnpj
+        )
 
 class CompanyDTO:
-    def __init__(self, name, address, phone, cnpj, email, password):
+    def __init__(self, name, address, phone, cnpj, email, password=None):
         self.name = name
         self.address = address
         self.phone = phone
@@ -92,6 +101,7 @@ class CompanyDTO:
         except Exception as e:
             current_app.logger.error(f"Erro ao decodificar token: {str(e)}")
             return None
+    
     def to_jwt(self):
         payload = {
             'name': self.name,
@@ -102,3 +112,14 @@ class CompanyDTO:
             'exp': datetime.now(timezone) + timedelta(hours=1)
         }
         return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+    
+    @staticmethod
+    def from_model(company):
+        return CompanyDTO(
+            name=company.name,
+            address=company.address,
+            phone=company.phone,
+            cnpj=company.cnpj,
+            email=company.email
+        )
+        

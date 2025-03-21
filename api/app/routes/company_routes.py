@@ -29,7 +29,18 @@ def enviar_email_verificacao(company_dto: CompanyDTO):
     except Exception as e:
         current_app.logger.error(f"Erro ao enviar e-mail de verificação: {str(e)}")
         raise
-
+@company_bp.route('/empresa/reenviaremail/<id>', methods=['GET'])
+def reenviaemail(id):
+    try:
+        db = get_db()
+        company = db.query(Company).get(id)
+        company_dto = company.to_dto()
+        enviar_email_verificacao(company_dto)
+        return jsonify({"mensagem": "E-mail de confirmação reenviado com sucesso"}), 200
+    except Exception as e:
+        current_app.logger.error(f"Erro ao reenviar e-mail de verificação: {str(e)}")
+        return jsonify({"erro": "Erro ao reenviar e-mail de verificação"}), 500
+    
 @company_bp.route('/empresa/registrar', methods=['POST'])
 def registrar():
     try:
@@ -43,7 +54,7 @@ def registrar():
         existing_company = db.query(Company).filter_by(email=dados['email']).first()
         existing_user = db.query(User).filter_by(email=dados['email']).first()
         if existing_company or existing_user:
-            return jsonify({"erro": "E-mail já registrado"}), 400
+            return jsonify({"erro": "E-mail já registrado"}), 409
 
         # Converte o endereço para JSON, se necessário
         address_data = dados.get('address')
@@ -67,7 +78,7 @@ def registrar():
         db.commit()
 
         # Envia o e-mail de confirmação
-        company_dto = CompanyDTO(name=company.name, address=company.address, phone=company.phone, cnpj=company.cnpj, email=company.email, password=None)
+        company_dto = CompanyDTO.from_model(company)
         enviar_email_verificacao(company_dto)
 
         return jsonify({"mensagem": "Verifique seu e-mail para confirmar a conta."}), 201
@@ -141,21 +152,15 @@ def redefinir_senha():
         
         db = get_db()
         company = db.query(Company).filter_by(email=email).first()
-        company_dto = CompanyDTO(
-            name=company.name,
-            email=company.email,
-            address=company.address,
-            phone=company.phone,
-            cnpj=company.cnpj,
-            password=None           
-            
-            
-        )
+        
         if not company:
             return jsonify({"erro": "Empresa não encontrada"}), 404
 
+        company_dto = company.to_dto()
+
         token = company_dto.to_jwt()
-        reset_url = url_for('company_blueprint.confirmar_redefinicao', token=token, _external=True)
+        frontend_url = current_app.config['FRONTEND_URL']
+        reset_url =  reset_url = f"{frontend_url}/redefine-senha-empresa/{token}"
         html = f'<b>Para redefinir sua senha, clique <a href="{reset_url}">aqui</a>.</b>'
         assunto = "Redefinição de senha"
         enviar_email(company.email, assunto, html)
@@ -179,6 +184,7 @@ def confirmar_redefinicao(token):
     except Exception as e:
         current_app.logger.error(f"Erro ao processar token de redefinição de senha: {str(e)}")
         return jsonify({"erro": "Erro ao processar token de redefinição de senha"}), 500
+
 @company_bp.route('/empresa/limpar_pendentes', methods=['DELETE'])
 def limpar_pendentes():
     try:
@@ -211,54 +217,118 @@ def obter(id):
             "address": company.address,
             "phone": company.phone,
             "cnpj": company.cnpj,
-            "email": company.email
+            "email": company.email,
+            "ativo": company.ativo,
+            "created_at": company.created_at.isoformat() if company.created_at else None,
+            "updated_at": company.updated_at.isoformat() if company.updated_at else None
         }), 200
     except Exception as e:
         current_app.logger.error(f"Erro ao obter empresa: {str(e)}")
         return jsonify({"erro": "Erro ao obter empresa"}), 500
     
 
-@company_bp.route('/empresas/find_by_substring/<substring>', methods=['GET'])
-def find_by_substring(substring):
+@company_bp.route('/empresas/find_by_substring/<substring>', defaults={'page': 1, 'limit': 10}, methods=['GET'])
+@company_bp.route('/empresas/find_by_substring/<substring>/<int:page>/<int:limit>', methods=['GET'])
+def find_by_substring(substring, page, limit):
     try:
         db = get_db()
-        companies = db.query(Company).filter(Company.name.contains(substring)).all()
-        company_list = []
-        for company in companies:
-            company_list.append({
-                "id": company.id,
-                "name": company.name,
-                "address": company.address,
-                "phone": company.phone,
-                "cnpj": company.cnpj,
-                "email": company.email
-            })
-        return jsonify(company_list), 200
+        # Contar o total de registros que correspondem à substring
+        total_count = db.query(Company)\
+                        .filter(Company.name.ilike(f"%{substring}%"))\
+                        .count()
+        # Calcular o número de páginas (arredondando para cima)
+        pages = (total_count + limit - 1) // limit
+
+        companies = db.query(Company)\
+                      .filter(Company.name.ilike(f"%{substring}%"))\
+                      .order_by(Company.name)\
+                      .limit(limit)\
+                      .offset((page - 1) * limit)\
+                      .all()
+        company_list = [company.to_dict() for company in companies]
+        return jsonify({"pages": pages, "list": company_list}), 200
     except Exception as e:
         current_app.logger.error(f"Erro ao buscar empresas por substring: {str(e)}")
-        return jsonify({"erro": "Erro ao buscar empresas por substring"}), 500
-    
-
-@company_bp.route('/empresas/nova_senha', methods=['PUT'])
-def nova_senha():
+        return jsonify({"erro": "Erro ao buscar empresas por substring"}), 500   
+@company_bp.route('/empresas/editar/<id>', methods=['PUT'])
+def editar(id):
     try:
         dados = request.get_json()
-        if not dados or 'email' not in dados or 'password' not in dados:
-            return jsonify({"erro": "E-mail e/ou senha não fornecidos"}), 400
-
-        email = dados['email']
-        password = dados['password']
+        if not dados:
+            return jsonify({"erro": "Nenhum dado de entrada fornecido"}), 400
 
         db = get_db()
-        company = db.query(Company).filter_by(email=email).first()
+        company = db.query(Company).get(id)
+
         if not company:
             return jsonify({"erro": "Empresa não encontrada"}), 404
 
-        company.password_hash = hashpw(password.encode('utf-8'), gensalt()).decode('utf-8')
+        # Verifica se o e-mail já está registrado para outra empresa
+        if 'email' in dados and dados['email'] != company.email:
+            existing_company_email = db.query(Company).filter(Company.email == dados['email']).first()
+            if existing_company_email:
+                return jsonify({"erro": "E-mail já registrado para outra empresa"}), 409
+        
+        # Verifica se o CNPJ já está registrado para outra empresa
+        if 'cnpj' in dados and dados['cnpj'] != company.cnpj:
+            existing_company_cnpj = db.query(Company).filter(Company.cnpj == dados['cnpj']).first()
+            if existing_company_cnpj:
+                return jsonify({"erro": "CNPJ já registrado para outra empresa"}), 409
+
+        # Atualiza os campos da empresa com os dados fornecidos
+        company.name = dados.get('name', company.name)
+        company.email = dados.get('email', company.email)
+        company.phone = dados.get('phone', company.phone)
+        company.cnpj = dados.get('cnpj', company.cnpj)
+        company.ativo = dados.get('ativo', company.ativo)
+        company.updated_at = datetime.now()
+
+        address_data = dados.get('address')
+        if isinstance(address_data, list):
+            address_json = json.dumps(address_data)
+        else:
+            address_json = address_data
+        company.address = address_json
+
         db.commit()
 
-        return jsonify({"mensagem": "Senha alterada com sucesso"}), 200
+        return jsonify({"mensagem": "Empresa atualizada com sucesso"}), 200
     except Exception as e:
         db.rollback()
-        current_app.logger.error(f"Erro ao alterar senha: {str(e)}")
-        return jsonify({"erro": "Erro ao alterar senha"}), 500
+        current_app.logger.error(f"Erro ao atualizar empresa: {str(e)}")
+        return jsonify({"erro": "Erro ao atualizar empresa"}), 500
+
+@company_bp.route('/empresa/deletar/<id>', methods=['DELETE'])
+def deletar(id):
+    try:
+        db = get_db()
+        company = db.query(Company).get(id)
+
+        if not company:
+            return jsonify({"erro": "Empresa não encontrada"}), 404
+
+        db.delete(company)
+        db.commit()
+
+        return jsonify({"mensagem": "Empresa deletada com sucesso"}), 200
+    except Exception as e:
+        db.rollback()
+        current_app.logger.error(f"Erro ao deletar empresa: {str(e)}")
+        return jsonify({"erro": "Erro ao deletar empresa"}), 500
+
+
+@company_bp.route('/empresas/all', defaults={'page': 1, 'limit': 100}, methods=['GET'])
+@company_bp.route('/empresas/all/<int:page>/<int:limit>', methods=['GET'])
+def get_all_companies(page, limit):
+    try:
+        db = get_db()
+        companies = db.query(Company)\
+                      .order_by(Company.name)\
+                      .limit(limit)\
+                      .offset((page - 1) * limit)\
+                      .all()
+        company_list = [company.to_dict() for company in companies]
+        return jsonify(company_list), 200
+    except Exception as e:
+        current_app.logger.error(f"Erro ao obter todas as empresas: {str(e)}")
+        return jsonify({"erro": "Erro ao obter todas as empresas"}), 500

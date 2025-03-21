@@ -63,8 +63,8 @@ class ExamRoutesTestCase(unittest.TestCase):
             dados_exame = {
                 "user_id": str(self.test_user.id),
                 "company_id": str(self.test_company.id),
-                "title": "Hemograma Completo",
-                "description": "Exame para análise de sangue"
+                "description": "Exame para análise de sangue",
+                "image_uploaded": False
             }
             
             # Fazer requisição POST para criar exame
@@ -85,7 +85,8 @@ class ExamRoutesTestCase(unittest.TestCase):
             ).first()
             
             self.assertIsNotNone(exame)
-            self.assertEqual(exame.title, "Hemograma Completo")
+            self.assertEqual(exame.description, "Exame para análise de sangue")
+            self.assertFalse(exame.image_uploaded)
     
     @patch('app.routes.exam_routes.get_db')
     def test_obter_exame(self, mock_get_db):
@@ -97,8 +98,8 @@ class ExamRoutesTestCase(unittest.TestCase):
         exame = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
-            title="Radiografia",
-            description="Exame de imagem do tórax"
+            description="Exame de imagem do tórax",
+            image_uploaded=True
         )
         self.db.add(exame)
         self.db.commit()
@@ -113,7 +114,8 @@ class ExamRoutesTestCase(unittest.TestCase):
             # Verificações
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json["id"], str(exame.id))
-            self.assertEqual(response.json["title"], "Radiografia")
+            self.assertEqual(response.json["description"], "Exame de imagem do tórax")
+            self.assertTrue(response.json["image_uploaded"])
     
     @patch('app.routes.exam_routes.get_db')
     def test_atualizar_exame(self, mock_get_db):
@@ -125,8 +127,8 @@ class ExamRoutesTestCase(unittest.TestCase):
         exame = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
-            title="Ultrassom",
-            description="Exame pendente"
+            description="Exame pendente",
+            image_uploaded=False
         )
         self.db.add(exame)
         self.db.commit()
@@ -137,8 +139,8 @@ class ExamRoutesTestCase(unittest.TestCase):
         with self.app.test_client() as client:
             # Dados atualizados
             dados_atualizados = {
-                "title": "Ultrassom Abdominal",
-                "description": "Exame finalizado: sem anormalidades"
+                "description": "Exame finalizado: sem anormalidades",
+                "image_uploaded": True
             }
             
             # Fazer requisição PUT para atualizar o exame
@@ -154,8 +156,8 @@ class ExamRoutesTestCase(unittest.TestCase):
             
             # Verificar se os dados foram atualizados no banco
             exame_atualizado = self.db.query(Exam).get(exame.id)
-            self.assertEqual(exame_atualizado.title, "Ultrassom Abdominal")
             self.assertEqual(exame_atualizado.description, "Exame finalizado: sem anormalidades")
+            self.assertTrue(exame_atualizado.image_uploaded)
     
     @patch('app.routes.exam_routes.get_db')
     def test_deletar_exame(self, mock_get_db):
@@ -167,8 +169,8 @@ class ExamRoutesTestCase(unittest.TestCase):
         exame = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
-            title="Ressonância",
-            description="Exame de cabeça"
+            description="Exame de cabeça",
+            image_uploaded=False
         )
         self.db.add(exame)
         self.db.commit()
@@ -199,8 +201,8 @@ class ExamRoutesTestCase(unittest.TestCase):
             exame = Exam(
                 user_id=self.test_user.id,
                 company_id=self.test_company.id,
-                title=f"Exame {i+1}",
-                description=f"Descrição do exame {i+1}"
+                description=f"Descrição do exame {i+1}",
+                image_uploaded=i % 2 == 0  # Alterna entre true e false
             )
             self.db.add(exame)
         self.db.commit()
@@ -240,15 +242,15 @@ class ExamRoutesTestCase(unittest.TestCase):
         exame1 = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
-            title="Exame Usuário 1",
-            description="Descrição exame usuário 1"
+            description="Descrição exame usuário 1",
+            image_uploaded=True
         )
         
         exame2 = Exam(
             user_id=outro_usuario.id,
             company_id=self.test_company.id,
-            title="Exame Usuário 2",
-            description="Descrição exame usuário 2"
+            description="Descrição exame usuário 2",
+            image_uploaded=False
         )
         
         self.db.add(exame1)
@@ -266,7 +268,7 @@ class ExamRoutesTestCase(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             exames = response.json
             self.assertEqual(len(exames), 1)
-            self.assertEqual(exames[0]["title"], "Exame Usuário 1")
+            self.assertEqual(exames[0]["description"], "Descrição exame usuário 1")
     
     @patch('app.routes.exam_routes.get_db')
     def test_listar_por_empresa(self, mock_get_db):
@@ -290,15 +292,15 @@ class ExamRoutesTestCase(unittest.TestCase):
         exame1 = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
-            title="Exame Empresa 1",
-            description="Descrição exame empresa 1"
+            description="Descrição exame empresa 1",
+            image_uploaded=True
         )
         
         exame2 = Exam(
             user_id=self.test_user.id,
             company_id=outra_empresa.id,
-            title="Exame Empresa 2",
-            description="Descrição exame empresa 2"
+            description="Descrição exame empresa 2",
+            image_uploaded=False
         )
         
         self.db.add(exame1)
@@ -316,7 +318,7 @@ class ExamRoutesTestCase(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             exames = response.json
             self.assertEqual(len(exames), 1)
-            self.assertEqual(exames[0]["title"], "Exame Empresa 1")
+            self.assertEqual(exames[0]["description"], "Descrição exame empresa 1")
     
     @patch('app.routes.exam_routes.get_db')
     def test_listar_por_data(self, mock_get_db):
@@ -331,8 +333,8 @@ class ExamRoutesTestCase(unittest.TestCase):
         exame = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
-            title="Exame Hoje",
-            description="Descrição exame hoje"
+            description="Exame Hoje",
+            image_uploaded=True
         )
         self.db.add(exame)
         self.db.commit()
@@ -373,15 +375,15 @@ class ExamRoutesTestCase(unittest.TestCase):
         exame1 = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
-            title="Exame Usuário 1",
-            description="Descrição exame usuário 1"
+            description="Descrição exame usuário 1",
+            image_uploaded=True
         )
         
         exame2 = Exam(
             user_id=outro_usuario.id,
             company_id=self.test_company.id,
-            title="Exame Usuário 2",
-            description="Descrição exame usuário 2"
+            description="Descrição exame usuário 2",
+            image_uploaded=False
         )
         
         self.db.add(exame1)
@@ -411,8 +413,8 @@ class ExamRoutesTestCase(unittest.TestCase):
         exame = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
-            title="Exame Empresa 1",
-            description="Descrição exame empresa 1"
+            description="Descrição exame empresa 1",
+            image_uploaded=True
         )
         
         self.db.add(exame)
@@ -427,6 +429,37 @@ class ExamRoutesTestCase(unittest.TestCase):
             
             # Verificações
             self.assertEqual(response.status_code, 200)
+    
+    @patch('app.routes.exam_routes.get_db')
+    def test_marcar_imagem_carregada(self, mock_get_db):
+        """Teste para marcar imagem como carregada"""
+        # Configurar o mock para retornar o banco de dados de teste
+        mock_get_db.return_value = self.db
+        
+        # Adicionar um exame com imagem não carregada
+        exame = Exam(
+            user_id=self.test_user.id,
+            company_id=self.test_company.id,
+            description="Exame sem imagem",
+            image_uploaded=False
+        )
+        self.db.add(exame)
+        self.db.commit()
+        
+        # Criar a aplicação de teste
+        self.app = create_app(testing=True)
+        
+        with self.app.test_client() as client:
+            # Fazer requisição PUT para marcar imagem como carregada
+            response = client.put(f"/api/exames/marcar_imagem_carregada/{exame.id}")
+            
+            # Verificações
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("Status de imagem atualizado", response.json["mensagem"])
+            
+            # Verificar se o status foi atualizado no banco
+            exame_atualizado = self.db.query(Exam).get(exame.id)
+            self.assertTrue(exame_atualizado.image_uploaded)
 
 if __name__ == "__main__":
     unittest.main()

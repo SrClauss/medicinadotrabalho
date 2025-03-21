@@ -33,7 +33,7 @@ class UserRole:
 class User(Base):
     __tablename__ = "users"
     id = Column(String(26), primary_key=True, default=lambda: str(ulid.new()))
-    name = Column(String(50), unique=True, nullable=False)
+    name = Column(String(50),  nullable=False)
     password_hash = Column(String(128), nullable=True)  # Permite valor nulo inicialmente
     email = Column(String(120), unique=True, nullable=False)
     address = Column(JSON, nullable=True)

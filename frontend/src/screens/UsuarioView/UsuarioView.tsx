@@ -15,7 +15,12 @@ import {
   ListItem,
   ListItemText,
   TableContainer,
+  FormControl,
+  Select,
+  MenuItem,
+  Pagination,
 } from "@mui/material";
+import { Grid2 } from "@mui/material/Unstable_Grid2"; // Importação do Grid2
 import SearchBar from "../../components/SearchBar/SearchBar";
 import { Info, EventNote, Delete, Edit } from "@mui/icons-material";
 import TitleForm from "../../components/TitleForm/TitleForm";
@@ -28,27 +33,43 @@ export default function UsuarioView() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [selectedUsuario, setSelectedUsuario] = useState<any>(null);
-  const { user } = useUser();
+  const { isAdmin } = useUser();
   const [critery, setCritery] = useState<string>('');
   const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
-  const { searchTerm } = useParams<{ searchTerm?: string }>(); // Captura o searchTerm do useParams
+  const { searchTerm } = useParams<{ searchTerm?: string }>();
+  
+  // Novos estados para paginação
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [limit, setLimit] = useState<number>(10);
 
   const fetchUsuarios = useCallback(() => {
-    let url = import.meta.env.VITE_BASE_URL + "/usuarios/all";
+    let url = `${import.meta.env.VITE_BASE_URL}/usuarios/all/${currentPage}/${limit}`;
     if (critery !== '') {
-      url = import.meta.env.VITE_BASE_URL + "/usuarios/find_by_substring/" + critery;
+      url = `${import.meta.env.VITE_BASE_URL}/usuarios/find_by_substring/${critery}/${currentPage}/${limit}`;
     }
 
     fetch(url)
       .then((response) => response.json())
-      .then((data) => setUsuarios(data))
-      .finally(() => setSearchPerformed(true)); // Garante que searchPerformed seja true após a busca
-  }, [critery]);
+      .then((data) => {
+        // Atualiza a lista de usuários e o total de páginas
+        if (data.list && Array.isArray(data.list)) {
+          setUsuarios(data.list);
+          setTotalPages(data.pages || 1);
+        } else if (Array.isArray(data)) {
+          // Compatibilidade com endpoint /all que pode retornar apenas array
+          setUsuarios(data);
+          setTotalPages(1);
+        }
+      })
+      .finally(() => setSearchPerformed(true));
+  }, [critery, currentPage, limit]);
 
   useEffect(() => {
     if (searchTerm) {
-      setCritery(searchTerm); // Define o critério de pesquisa com o searchTerm do useParams
-      setSearchPerformed(true); // Inicia a busca automaticamente
+      setCritery(searchTerm);
+      setCurrentPage(1); // Reseta para primeira página em nova busca
+      setSearchPerformed(true);
     }
   }, [searchTerm]);
 
@@ -60,7 +81,19 @@ export default function UsuarioView() {
 
   const handleSearch = (searchTerm: string) => {
     setCritery(searchTerm);
-    setSearchPerformed(true); // Define searchPerformed como true quando a pesquisa é realizada
+    setCurrentPage(1); // Reseta para primeira página em nova busca
+    setSearchPerformed(true);
+  };
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setCurrentPage(page);
+    setSearchPerformed(true);
+  };
+
+  const handleLimitChange = (event: SelectChangeEvent<number>) => {
+      setLimit(Number(event.target.value));
+      setCurrentPage(1); // Reseta para primeira página ao mudar o limite
+      setSearchPerformed(true);
   };
 
   const handlePopoverOpen = (event: React.MouseEvent<HTMLButtonElement>, usuario: any) => {
@@ -86,6 +119,11 @@ export default function UsuarioView() {
         if (response.ok) {
           alert("Usuário excluído com sucesso!");
           setUsuarios(usuarios.filter((usuario) => usuario.id !== usuarioId));
+          // Recarregar dados se a página ficar vazia após exclusão
+          if (usuarios.length === 1 && currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+          }
+          setSearchPerformed(true);
         } else {
           alert("Erro ao excluir usuário.");
         }
@@ -96,6 +134,45 @@ export default function UsuarioView() {
     }
   };
 
+  // Componente para os controles de paginação que será reutilizado
+  const PaginationControls = () => (
+    <Grid2 
+      container 
+      rowSpacing={2} 
+      columnSpacing={2} 
+      alignItems="center" 
+      justifyContent="center" 
+      sx={{ marginY: 2 }}
+    >
+      <Grid2>
+        <FormControl variant="outlined" size="small">
+          <Select
+            value={limit}
+            onChange={handleLimitChange}
+            displayEmpty
+            inputProps={{ 'aria-label': 'Itens por página' }}
+          >
+            <MenuItem value={5}>5 por página</MenuItem>
+            <MenuItem value={10}>10 por página</MenuItem>
+            <MenuItem value={25}>25 por página</MenuItem>
+            <MenuItem value={50}>50 por página</MenuItem>
+            <MenuItem value={100}>100 por página</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid2>
+      <Grid2>
+        <Pagination 
+          count={totalPages} 
+          page={currentPage} 
+          onChange={handlePageChange} 
+          color="primary" 
+          showFirstButton 
+          showLastButton
+        />
+      </Grid2>
+    </Grid2>
+  );
+
   const open = Boolean(anchorEl);
 
   return (
@@ -103,14 +180,17 @@ export default function UsuarioView() {
       <Paper elevation={3}>
         <TitleForm title="Visualizar Usuário" id="title-visualizar-usuario" />
         <SearchBar onSearch={handleSearch} label="Pesquisar" />
-        <Box sx={{ display: "flex", justifyContent: "flex-end", padding: 2 }}>
+        <Box sx={{ padding: 2 }}>
+          {/* Controles de paginação no início da tabela */}
+          {usuarios.length > 0 && <PaginationControls />}
+          
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell width={100}>Nome</TableCell>
-                  <TableCell width={100}>Email</TableCell>
-                  <TableCell width={50}>Info</TableCell>
+                  <TableCell width={150}>Nome</TableCell>
+                  <TableCell width={150}>Email</TableCell>
+                  <TableCell width={150}>Info</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -129,7 +209,7 @@ export default function UsuarioView() {
                           <EventNote color="warning" />
                         </IconButton>
                       </Tooltip>
-                      {user && user.role === 0 && (
+                      {isAdmin() && (
                         <>
                           <Tooltip title="Editar">
                             <IconButton component={Link} to={`/editar-usuario/${usuario.id}`}>
@@ -149,7 +229,11 @@ export default function UsuarioView() {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {/* Controles de paginação no final da tabela */}
+          {usuarios.length > 0 && <PaginationControls />}
         </Box>
+        
         <Popover
           open={open}
           anchorEl={anchorEl}
@@ -198,7 +282,9 @@ export default function UsuarioView() {
                 </Typography>
                 <List>
                   {selectedUsuario.address &&
-                    JSON.parse(selectedUsuario.address).map((endereco: any) => (
+                    ((typeof selectedUsuario.address === 'string' 
+                      ? JSON.parse(selectedUsuario.address) 
+                      : selectedUsuario.address) || []).map((endereco: any) => (
                       <ListItem key={endereco.id}>
                         <ListItemText
                           primary={`${endereco.logradouro}, ${endereco.numero}`}

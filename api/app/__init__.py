@@ -223,7 +223,6 @@ def create_app(testing=False):
     from app.routes.company_routes import company_bp
     from app.routes.exam_routes import exam_bp
     from app.routes.image_routes import image_bp
-  
     from app.routes.login import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api', name='auth')
     app.register_blueprint(user_bp, url_prefix='/api', name='user_blueprint')
@@ -254,3 +253,6 @@ def drop_test_db():
     from app.models.company import Base
     from app.models.exam import Base
     Base.metadata.drop_all(bind=test_engine)
+    
+    
+    
