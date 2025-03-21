@@ -20,6 +20,7 @@ export default function LoginScreen() {
   const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
   const { setToken, fetchUserData } = useUser();
+  /*
   const handlePopulate = async () => {
     try {
       const baseUrl = import.meta.env.VITE_BASE_URL;
@@ -46,6 +47,7 @@ export default function LoginScreen() {
       );
     }
   }
+  */
 
 
   const handleLogin = async () => {
@@ -97,9 +99,7 @@ export default function LoginScreen() {
         elevation={3}
         sx={{ padding: 2, marginTop: 10, maxWidth: 450, width: "100%" }}
       > 
-      <Button variant="contained" onClick={handlePopulate}>
-        Popular banco de dados
-      </Button>
+      
         <TitleForm title="Login" id="title-login" />
         <Snackbar
           open={!!errorMessage || !!successMessage}

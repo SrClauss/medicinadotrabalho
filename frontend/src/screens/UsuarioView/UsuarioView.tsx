@@ -19,15 +19,16 @@ import {
   Select,
   MenuItem,
   Pagination,
+  Fab
 } from "@mui/material";
-import { Grid2 } from "@mui/material/Unstable_Grid2"; // Importação do Grid2
 import SearchBar from "../../components/SearchBar/SearchBar";
-import { Info, EventNote, Delete, Edit } from "@mui/icons-material";
+import { Info, EventNote, Delete,  Add, Edit } from "@mui/icons-material";
 import TitleForm from "../../components/TitleForm/TitleForm";
 import { useEffect, useState, useCallback } from "react";
 import { useUser } from "../../contexts/UserContext/UserContext";
 import Usuario from "../../interfaces/Usuario";
 import { Link, useParams } from "react-router-dom";
+import { SelectChangeEvent } from "@mui/material";
 
 export default function UsuarioView() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -37,7 +38,7 @@ export default function UsuarioView() {
   const [critery, setCritery] = useState<string>('');
   const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
   const { searchTerm } = useParams<{ searchTerm?: string }>();
-  
+
   // Novos estados para paginação
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -91,9 +92,9 @@ export default function UsuarioView() {
   };
 
   const handleLimitChange = (event: SelectChangeEvent<number>) => {
-      setLimit(Number(event.target.value));
-      setCurrentPage(1); // Reseta para primeira página ao mudar o limite
-      setSearchPerformed(true);
+    setLimit(Number(event.target.value));
+    setCurrentPage(1); // Reseta para primeira página ao mudar o limite
+    setSearchPerformed(true);
   };
 
   const handlePopoverOpen = (event: React.MouseEvent<HTMLButtonElement>, usuario: any) => {
@@ -136,41 +137,39 @@ export default function UsuarioView() {
 
   // Componente para os controles de paginação que será reutilizado
   const PaginationControls = () => (
-    <Grid2 
-      container 
-      rowSpacing={2} 
-      columnSpacing={2} 
-      alignItems="center" 
-      justifyContent="center" 
-      sx={{ marginY: 2 }}
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginY: 2,
+        gap: 2, // Adiciona um espaçamento entre os elementos
+      }}
     >
-      <Grid2>
-        <FormControl variant="outlined" size="small">
-          <Select
-            value={limit}
-            onChange={handleLimitChange}
-            displayEmpty
-            inputProps={{ 'aria-label': 'Itens por página' }}
-          >
-            <MenuItem value={5}>5 por página</MenuItem>
-            <MenuItem value={10}>10 por página</MenuItem>
-            <MenuItem value={25}>25 por página</MenuItem>
-            <MenuItem value={50}>50 por página</MenuItem>
-            <MenuItem value={100}>100 por página</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid2>
-      <Grid2>
-        <Pagination 
-          count={totalPages} 
-          page={currentPage} 
-          onChange={handlePageChange} 
-          color="primary" 
-          showFirstButton 
-          showLastButton
-        />
-      </Grid2>
-    </Grid2>
+      <FormControl variant="outlined" size="small">
+        <Select
+          value={limit}
+          onChange={handleLimitChange}
+          displayEmpty
+          inputProps={{ 'aria-label': 'Itens por página' }}
+        >
+          <MenuItem value={5}>5 por página</MenuItem>
+          <MenuItem value={10}>10 por página</MenuItem>
+          <MenuItem value={25}>25 por página</MenuItem>
+          <MenuItem value={50}>50 por página</MenuItem>
+          <MenuItem value={100}>100 por página</MenuItem>
+        </Select>
+      </FormControl>
+      <Pagination
+        count={totalPages}
+        page={currentPage}
+        onChange={handlePageChange}
+        color="primary"
+        showFirstButton
+        showLastButton
+      />
+    </Box>
   );
 
   const open = Boolean(anchorEl);
@@ -183,7 +182,7 @@ export default function UsuarioView() {
         <Box sx={{ padding: 2 }}>
           {/* Controles de paginação no início da tabela */}
           {usuarios.length > 0 && <PaginationControls />}
-          
+
           <TableContainer>
             <Table>
               <TableHead>
@@ -233,7 +232,7 @@ export default function UsuarioView() {
           {/* Controles de paginação no final da tabela */}
           {usuarios.length > 0 && <PaginationControls />}
         </Box>
-        
+
         <Popover
           open={open}
           anchorEl={anchorEl}
@@ -282,22 +281,35 @@ export default function UsuarioView() {
                 </Typography>
                 <List>
                   {selectedUsuario.address &&
-                    ((typeof selectedUsuario.address === 'string' 
-                      ? JSON.parse(selectedUsuario.address) 
+                    ((typeof selectedUsuario.address === 'string'
+                      ? JSON.parse(selectedUsuario.address)
                       : selectedUsuario.address) || []).map((endereco: any) => (
-                      <ListItem key={endereco.id}>
-                        <ListItemText
-                          primary={`${endereco.logradouro}, ${endereco.numero}`}
-                          secondary={`${endereco.bairro} - ${endereco.cidade}, ${endereco.estado} - CEP: ${endereco.cep}`}
-                        />
-                      </ListItem>
-                    ))}
+                        <ListItem key={endereco.id}>
+                          <ListItemText
+                            primary={`${endereco.logradouro}, ${endereco.numero}`}
+                            secondary={`${endereco.bairro} - ${endereco.cidade}, ${endereco.estado} - CEP: ${endereco.cep}`}
+                          />
+                        </ListItem>
+                      ))}
                 </List>
               </>
             )}
           </Paper>
         </Popover>
       </Paper>
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={{
+          position: 'fixed',
+          bottom: 90,
+          right: 20,
+        }}
+        component={Link}
+        to="/cadastro-usuario" // Adapte a rota conforme necessário
+      >
+        <Add />
+      </Fab>
     </Container>
   );
 }

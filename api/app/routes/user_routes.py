@@ -6,9 +6,18 @@ from flask_mail import Message
 from bcrypt import hashpw, gensalt
 import json
 from datetime import datetime, timedelta
+from sqlalchemy import func
 import unicodedata
+from unidecode import unidecode  # Importe a biblioteca unidecode
 
 user_bp = Blueprint('user', __name__)
+
+# Remova a função remover_acentos
+# def remover_acentos(texto):
+#     """Remove acentos e normaliza o texto para comparação."""
+#     texto = texto.lower()
+#     return ''.join(c for c in unicodedata.normalize('NFD', texto)
+#                    if unicodedata.category(c) != 'Mn')
 
 def enviar_email(para, assunto, template):
     msg = Message(assunto, recipients=[para], html=template, sender=current_app.config['MAIL_USERNAME'])
@@ -179,12 +188,14 @@ def get_all_users(page, limit):
 def find_by_substring(substring, page, limit):
     try:
         db = get_db()
+        # Remova a normalização do substring
+        # substring_normalizado = unidecode(substring).lower()
         total_count = db.query(User)\
-                        .filter(User.name.ilike(f"%{substring}%"))\
+                        .filter(User.name.like(f"%{substring}%"))\
                         .count()
         pages = (total_count + limit - 1) // limit
         users = db.query(User)\
-                  .filter(User.name.ilike(f"%{substring}%"))\
+                  .filter(User.name.like(f"%{substring}%"))\
                   .order_by(User.name)\
                   .limit(limit)\
                   .offset((page - 1) * limit)\

@@ -14,6 +14,7 @@ import EmpresaView from './screens/EmpresaView/EmpresaView';
 import RedefineSenhaEmpresa from './screens/RedefineSenha/RedefineSenhaEmpresa';
 import LoginScreen from './screens/LoginScreen/LoginScreen';
 import RecuperacaoSenha from './screens/RecuperacaoSenha/RecuperacaoSenha';
+import AgendamentoPorEmpresa from './screens/AgendamentoPorEmpresa/AgendamentoPorEmpresa';
 export function App() {
   return (
     <ThemeProvider>
@@ -32,7 +33,7 @@ export function App() {
             <Route path="/editar-empresa/:id" element={<MainLayout><CadastroEmpresa /></MainLayout>} />
             <Route path="/empresas/:searchTerm?" element={<MainLayout><EmpresaView /></MainLayout>} />
             <Route path="/redefine-senha" element={<OfflineLayout><RecuperacaoSenha /></OfflineLayout>} />
-
+            <Route path="/agendamento-empresa/:companyId" element={<MainLayout><AgendamentoPorEmpresa /></MainLayout>} />
           </Routes>
         </UserProvider>
       </Router>

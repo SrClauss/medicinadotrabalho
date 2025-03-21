@@ -1,6 +1,6 @@
 import unittest
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from unittest.mock import patch, MagicMock
 from app import create_app, drop_test_db
 from app.database import Base
@@ -60,11 +60,13 @@ class ExamRoutesTestCase(unittest.TestCase):
         
         with self.app.test_client() as client:
             # Dados para criação do exame
+            exam_date = date(2025, 3, 23)
             dados_exame = {
                 "user_id": str(self.test_user.id),
                 "company_id": str(self.test_company.id),
                 "description": "Exame para análise de sangue",
-                "image_uploaded": False
+                "image_uploaded": False,
+                "exam_date": exam_date.isoformat()
             }
             
             # Fazer requisição POST para criar exame
@@ -87,6 +89,7 @@ class ExamRoutesTestCase(unittest.TestCase):
             self.assertIsNotNone(exame)
             self.assertEqual(exame.description, "Exame para análise de sangue")
             self.assertFalse(exame.image_uploaded)
+            self.assertEqual(exame.exam_date, exam_date)
     
     @patch('app.routes.exam_routes.get_db')
     def test_obter_exame(self, mock_get_db):
@@ -95,11 +98,13 @@ class ExamRoutesTestCase(unittest.TestCase):
         mock_get_db.return_value = self.db
         
         # Adicionar um exame
+        exam_date = date(2025, 3, 23)
         exame = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
             description="Exame de imagem do tórax",
-            image_uploaded=True
+            image_uploaded=True,
+            exam_date=exam_date
         )
         self.db.add(exame)
         self.db.commit()
@@ -116,6 +121,7 @@ class ExamRoutesTestCase(unittest.TestCase):
             self.assertEqual(response.json["id"], str(exame.id))
             self.assertEqual(response.json["description"], "Exame de imagem do tórax")
             self.assertTrue(response.json["image_uploaded"])
+            self.assertEqual(response.json["exam_date"], exam_date.isoformat())
     
     @patch('app.routes.exam_routes.get_db')
     def test_atualizar_exame(self, mock_get_db):
@@ -124,11 +130,13 @@ class ExamRoutesTestCase(unittest.TestCase):
         mock_get_db.return_value = self.db
         
         # Adicionar um exame
+        exam_date = date(2025, 3, 23)
         exame = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
             description="Exame pendente",
-            image_uploaded=False
+            image_uploaded=False,
+            exam_date=exam_date
         )
         self.db.add(exame)
         self.db.commit()
@@ -138,9 +146,11 @@ class ExamRoutesTestCase(unittest.TestCase):
         
         with self.app.test_client() as client:
             # Dados atualizados
+            nova_exam_date = date(2025, 4, 24)
             dados_atualizados = {
                 "description": "Exame finalizado: sem anormalidades",
-                "image_uploaded": True
+                "image_uploaded": True,
+                "exam_date": nova_exam_date.isoformat()
             }
             
             # Fazer requisição PUT para atualizar o exame
@@ -158,6 +168,7 @@ class ExamRoutesTestCase(unittest.TestCase):
             exame_atualizado = self.db.query(Exam).get(exame.id)
             self.assertEqual(exame_atualizado.description, "Exame finalizado: sem anormalidades")
             self.assertTrue(exame_atualizado.image_uploaded)
+            self.assertEqual(exame_atualizado.exam_date, nova_exam_date)
     
     @patch('app.routes.exam_routes.get_db')
     def test_deletar_exame(self, mock_get_db):
@@ -198,11 +209,13 @@ class ExamRoutesTestCase(unittest.TestCase):
         
         # Adicionar alguns exames
         for i in range(3):
+            exam_date = date(2025, 3, i + 20)
             exame = Exam(
                 user_id=self.test_user.id,
                 company_id=self.test_company.id,
                 description=f"Descrição do exame {i+1}",
-                image_uploaded=i % 2 == 0  # Alterna entre true e false
+                image_uploaded=i % 2 == 0,  # Alterna entre true e false
+                exam_date=exam_date
             )
             self.db.add(exame)
         self.db.commit()
@@ -218,6 +231,8 @@ class ExamRoutesTestCase(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             exames = response.json
             self.assertEqual(len(exames), 3)
+            for exame in exames:
+                self.assertIn("exam_date", exame)
     
     @patch('app.routes.exam_routes.get_db')
     def test_listar_por_usuario(self, mock_get_db):
@@ -239,18 +254,22 @@ class ExamRoutesTestCase(unittest.TestCase):
         self.db.commit()
         
         # Adicionar exames para diferentes usuários
+        exam_date1 = date(2025, 3, 23)
         exame1 = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
             description="Descrição exame usuário 1",
-            image_uploaded=True
+            image_uploaded=True,
+            exam_date=exam_date1
         )
         
+        exam_date2 = date(2025, 3, 24)
         exame2 = Exam(
             user_id=outro_usuario.id,
             company_id=self.test_company.id,
             description="Descrição exame usuário 2",
-            image_uploaded=False
+            image_uploaded=False,
+            exam_date=exam_date2
         )
         
         self.db.add(exame1)
@@ -269,6 +288,7 @@ class ExamRoutesTestCase(unittest.TestCase):
             exames = response.json
             self.assertEqual(len(exames), 1)
             self.assertEqual(exames[0]["description"], "Descrição exame usuário 1")
+            self.assertEqual(exames[0]["exam_date"], exam_date1.isoformat())
     
     @patch('app.routes.exam_routes.get_db')
     def test_listar_por_empresa(self, mock_get_db):
@@ -289,18 +309,22 @@ class ExamRoutesTestCase(unittest.TestCase):
         self.db.commit()
         
         # Adicionar exames para diferentes empresas
+        exam_date1 = date(2025, 3, 23)
         exame1 = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
             description="Descrição exame empresa 1",
-            image_uploaded=True
+            image_uploaded=True,
+            exam_date=exam_date1
         )
         
+        exam_date2 = date(2025, 3, 24)
         exame2 = Exam(
             user_id=self.test_user.id,
             company_id=outra_empresa.id,
             description="Descrição exame empresa 2",
-            image_uploaded=False
+            image_uploaded=False,
+            exam_date=exam_date2
         )
         
         self.db.add(exame1)
@@ -319,6 +343,7 @@ class ExamRoutesTestCase(unittest.TestCase):
             exames = response.json
             self.assertEqual(len(exames), 1)
             self.assertEqual(exames[0]["description"], "Descrição exame empresa 1")
+            self.assertEqual(exames[0]["exam_date"], exam_date1.isoformat())
     
     @patch('app.routes.exam_routes.get_db')
     def test_listar_por_data(self, mock_get_db):
@@ -327,14 +352,15 @@ class ExamRoutesTestCase(unittest.TestCase):
         mock_get_db.return_value = self.db
         
         # Data para teste (hoje)
-        hoje = datetime.now().strftime('%Y-%m-%d')
+        hoje = date.today()
         
         # Adicionar exames
         exame = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
             description="Exame Hoje",
-            image_uploaded=True
+            image_uploaded=True,
+            exam_date=hoje
         )
         self.db.add(exame)
         self.db.commit()
@@ -344,10 +370,14 @@ class ExamRoutesTestCase(unittest.TestCase):
         
         with self.app.test_client() as client:
             # Fazer requisição GET para listar exames por data
-            response = client.get(f"/api/exames/listar_por_data/{hoje}")
+            response = client.get(f"/api/exames/listar_por_data/{hoje.isoformat()}")
             
             # Verificações
             self.assertEqual(response.status_code, 200)
+            exames = response.json
+            self.assertEqual(len(exames), 1)
+            self.assertEqual(exames[0]["description"], "Exame Hoje")
+            self.assertEqual(exames[0]["exam_date"], hoje.isoformat())
     
     @patch('app.routes.exam_routes.get_db')
     def test_listar_por_data_usuario(self, mock_get_db):
@@ -369,21 +399,23 @@ class ExamRoutesTestCase(unittest.TestCase):
         self.db.commit()
         
         # Data para teste (hoje)
-        hoje = datetime.now().strftime('%Y-%m-%d')
+        hoje = date.today()
         
         # Adicionar exames para diferentes usuários
         exame1 = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
             description="Descrição exame usuário 1",
-            image_uploaded=True
+            image_uploaded=True,
+            exam_date=hoje
         )
         
         exame2 = Exam(
             user_id=outro_usuario.id,
             company_id=self.test_company.id,
             description="Descrição exame usuário 2",
-            image_uploaded=False
+            image_uploaded=False,
+            exam_date=hoje
         )
         
         self.db.add(exame1)
@@ -395,10 +427,14 @@ class ExamRoutesTestCase(unittest.TestCase):
         
         with self.app.test_client() as client:
             # Fazer requisição GET para listar exames por data e usuário
-            response = client.get(f"/api/exames/listar_por_data_usuario/{hoje}/{self.test_user.id}")
+            response = client.get(f"/api/exames/listar_por_data_usuario/{hoje.isoformat()}/{self.test_user.id}")
             
             # Verificações
             self.assertEqual(response.status_code, 200)
+            exames = response.json
+            self.assertEqual(len(exames), 1)
+            self.assertEqual(exames[0]["description"], "Descrição exame usuário 1")
+            self.assertEqual(exames[0]["exam_date"], hoje.isoformat())
     
     @patch('app.routes.exam_routes.get_db')
     def test_listar_por_data_empresa(self, mock_get_db):
@@ -407,14 +443,15 @@ class ExamRoutesTestCase(unittest.TestCase):
         mock_get_db.return_value = self.db
         
         # Data para teste (hoje)
-        hoje = datetime.now().strftime('%Y-%m-%d')
+        hoje = date.today()
         
         # Adicionar exame
         exame = Exam(
             user_id=self.test_user.id,
             company_id=self.test_company.id,
             description="Descrição exame empresa 1",
-            image_uploaded=True
+            image_uploaded=True,
+            exam_date=hoje
         )
         
         self.db.add(exame)
@@ -425,10 +462,14 @@ class ExamRoutesTestCase(unittest.TestCase):
         
         with self.app.test_client() as client:
             # Fazer requisição GET para listar exames por data e empresa
-            response = client.get(f"/api/exames/listar_por_data_empresa/{hoje}/{self.test_company.id}")
+            response = client.get(f"/api/exames/listar_por_data_empresa/{hoje.isoformat()}/{self.test_company.id}")
             
             # Verificações
             self.assertEqual(response.status_code, 200)
+            exames = response.json
+            self.assertEqual(len(exames), 1)
+            self.assertEqual(exames[0]["description"], "Descrição exame empresa 1")
+            self.assertEqual(exames[0]["exam_date"], hoje.isoformat())
     
     @patch('app.routes.exam_routes.get_db')
     def test_marcar_imagem_carregada(self, mock_get_db):

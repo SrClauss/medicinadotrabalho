@@ -19,8 +19,16 @@ import Endereco from "../../interfaces/Endereco";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate, useParams } from "react-router-dom";
 
-export default function CadastroUsuario() {
-  const { id } = useParams<{ id?: string }>(); // ID agora vem do useParams e é opcional
+interface CadastroUsuarioProps {
+  onAddUser?: (user: Usuario) => void; // Nova prop opcional para adicionar o usuário à lista
+  id?: string; // ID opcional para edição
+  isModal?: boolean; // Indica se está sendo usado em um modal
+}
+
+export default function CadastroUsuario({ onAddUser, id: propId, isModal = false }: CadastroUsuarioProps) {
+  const { id: paramId } = useParams<{ id?: string }>();
+  const id = propId || paramId; // Usar ID da prop se fornecido, caso contrário do parâmetro de rota
+  
   const [user, setUser] = useState<Usuario>({
     id: "",
     name: "",
@@ -112,13 +120,48 @@ export default function CadastroUsuario() {
       if (response.ok) {
         setAlert({
           open: true,
-          message: id? `Usuário ${id} atualizado com sucesso!` : "Usuário cadastrado com sucesso! Verifique sua caixa de email",
+          message: id? `Usuário ${id} atualizado com sucesso!` : "Usuário cadastrado com sucesso!",
           severity: "success",
         });
-        // Redireciona para UsuarioView com o nome do usuário como searchTerm
-        setTimeout(() => {
-          navigate(`/usuarios/${user.name}`);
-        }, 3000);
+        
+        const data = await response.json();
+        
+        // Se for um cadastro e tiver a função onAddUser, chamar essa função
+        if (!id && onAddUser) {
+          // Criar objeto de usuário completo para retornar
+          const novoUsuario: Usuario = {
+            ...user,
+            id: data.id, // Usar o ID retornado pela API
+            address: adresses,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          onAddUser(novoUsuario);
+        } 
+        // Se não estiver em modal, redirecionar após sucesso
+        else if (!isModal) {
+          setTimeout(() => {
+            navigate(`/usuarios/${user.name}`);
+          }, 3000);
+        }
+        
+        // Limpar formulário após cadastro bem-sucedido
+        if (!id) {
+          setUser({
+            id: "",
+            name: "",
+            email: "",
+            address: null,
+            phone: "",
+            cpf: "",
+            role: 2,
+            ativo: true,
+            created_at: "",
+            updated_at: "",
+          });
+          setAdresses([]);
+        }
       } else {
         const errorData = await response.json();
         let message = errorData.erro || "Erro ao cadastrar/atualizar usuário.";
@@ -140,142 +183,158 @@ export default function CadastroUsuario() {
     }
   };
 
-  return (
-    <Container>
-      <Paper elevation={3} sx={{ padding: 2, marginTop: 2 }}>
-        <TitleForm
-          title={id ? "Editar Usuário" : "Cadastro de Usuário"}
-          id={id ? "editar-usuario-title" : "cadastro-usuario-title"}
-        />
-        {alert.open && (
-          <Alert
-            severity={alert.severity}
-            onClose={() => setAlert({ ...alert, open: false })}
-          >
-            {alert.message}
-          </Alert>
-        )}
-        <TwoColumnsForm id="name-email">
-          <TextField
-            id="name"
-            label="Nome"
-            variant="outlined"
-            fullWidth
-            value={user.name}
-            onChange={(e) => setUser({ ...user, name: e.target.value })}
-            autoComplete="off"
-          />
-          <TextField
-            id="email"
-            label="Email"
-            variant="outlined"
-            type="email"
-            fullWidth
-            value={user.email}
-            onChange={(e) => setUser({ ...user, email: e.target.value })}
-            autoComplete="off"
-          />
-        </TwoColumnsForm>
-
-        <TwoColumnsForm id="phone-cpf">
-          <TextField
-            id="phone"
-            label="Telefone"
-            variant="outlined"
-            fullWidth
-            value={user.phone || ""}
-            onChange={(e) => setUser({ ...user, phone: e.target.value })}
-            autoComplete="off"
-          />
-          <TextField
-            id="cpf"
-            label="CPF"
-            variant="outlined"
-            fullWidth
-            value={user.cpf || ""}
-            onChange={(e) => setUser({ ...user, cpf: e.target.value })}
-            autoComplete="off"
-          />
-        </TwoColumnsForm>
-
-        <TwoColumnsForm id="role-adress">
-          <Box width={"100%"}>
-            <RadioGroup
-              aria-label="role"
-              name="role"
-              value={user.role?.toString()}
-              onChange={(e) =>
-                setUser({ ...user, role: parseInt(e.target.value) })
-              }
-            >
-              <TwoColumnsForm id="role">
-                <FormControlLabel
-                  value="0"
-                  control={<Radio />}
-                  label="Administrador"
-                />
-                <FormControlLabel
-                  value="1"
-                  control={<Radio />}
-                  label="Editor"
-                />
-                <FormControlLabel
-                  value="2"
-                  control={<Radio />}
-                  label="Trabalhador"
-                />
-              </TwoColumnsForm>
-            </RadioGroup>
-          </Box>
-
-          <Box width={"100%"}>
-            <Button
-              onClick={() => setOpenAdressDialog(true)}
-              variant="contained"
-              color="primary"
-              fullWidth
-            >
-              Adicionar Endereço
-            </Button>
-          </Box>
-          <AdressDialog
-            open={openAdressDialog}
-            onConfirm={handleSetAdresses}
-            onClose={() => setOpenAdressDialog(false)}
-          />
-        </TwoColumnsForm>
-        <Box width={"100%"}>
-          {adresses.map((adress, index) => {
-            return (
-              <Paper
-                elevation={4}
-                key={index}
-                sx={{ padding: 1, marginTop: 1 }}
-              >
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  {adress.toString()}
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDeleteAdress(adress)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              </Paper>
-            );
-          })}
-        </Box>
-        <Button
-          sx={{ padding: 2 }}
-          id="cadastrar-button"
-          variant="contained"
-          color="primary"
-          fullWidth
-          onClick={handleSubmit}
+  const renderContent = () => (
+    <>
+      <TitleForm
+        title={id ? "Editar Usuário" : "Cadastro de Usuário"}
+        id={id ? "editar-usuario-title" : "cadastro-usuario-title"}
+      />
+      {alert.open && (
+        <Alert
+          severity={alert.severity}
+          onClose={() => setAlert({ ...alert, open: false })}
         >
-          {id ? "Salvar Alterações" : "Cadastrar Usuário"}
-        </Button>
-      </Paper>
-    </Container>
+          {alert.message}
+        </Alert>
+      )}
+      <TwoColumnsForm id="name-email">
+        <TextField
+          id="name"
+          label="Nome"
+          variant="outlined"
+          fullWidth
+          value={user.name}
+          onChange={(e) => setUser({ ...user, name: e.target.value })}
+          autoComplete="off"
+        />
+        <TextField
+          id="email"
+          label="Email"
+          variant="outlined"
+          type="email"
+          fullWidth
+          value={user.email}
+          onChange={(e) => setUser({ ...user, email: e.target.value })}
+          autoComplete="off"
+        />
+      </TwoColumnsForm>
+
+      <TwoColumnsForm id="phone-cpf">
+        <TextField
+          id="phone"
+          label="Telefone"
+          variant="outlined"
+          fullWidth
+          value={user.phone || ""}
+          onChange={(e) => setUser({ ...user, phone: e.target.value })}
+          autoComplete="off"
+        />
+        <TextField
+          id="cpf"
+          label="CPF"
+          variant="outlined"
+          fullWidth
+          value={user.cpf || ""}
+          onChange={(e) => setUser({ ...user, cpf: e.target.value })}
+          autoComplete="off"
+        />
+      </TwoColumnsForm>
+
+      <TwoColumnsForm id="role-adress">
+        <Box width={"100%"}>
+          <RadioGroup
+            aria-label="role"
+            name="role"
+            value={user.role?.toString()}
+            onChange={(e) =>
+              setUser({ ...user, role: parseInt(e.target.value) })
+            }
+          >
+            <TwoColumnsForm id="role">
+              <FormControlLabel
+                value="0"
+                control={<Radio />}
+                label="Administrador"
+              />
+              <FormControlLabel
+                value="1"
+                control={<Radio />}
+                label="Editor"
+              />
+              <FormControlLabel
+                value="2"
+                control={<Radio />}
+                label="Trabalhador"
+              />
+            </TwoColumnsForm>
+          </RadioGroup>
+        </Box>
+
+        <Box width={"100%"}>
+          <Button
+            onClick={() => setOpenAdressDialog(true)}
+            variant="contained"
+            color="primary"
+            fullWidth
+          >
+            Adicionar Endereço
+          </Button>
+        </Box>
+        <AdressDialog
+          open={openAdressDialog}
+          onConfirm={handleSetAdresses}
+          onClose={() => setOpenAdressDialog(false)}
+        />
+      </TwoColumnsForm>
+      <Box width={"100%"}>
+        {adresses.map((adress, index) => {
+          return (
+            <Paper
+              elevation={4}
+              key={index}
+              sx={{ padding: 1, marginTop: 1 }}
+            >
+              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                {adress.toString()}
+                <IconButton
+                  color="error"
+                  onClick={() => handleDeleteAdress(adress)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            </Paper>
+          );
+        })}
+      </Box>
+      <Button
+        sx={{ padding: 2, mt: 2 }}
+        id="cadastrar-button"
+        variant="contained"
+        color="primary"
+        fullWidth
+        onClick={handleSubmitAndAdd} // Alterado para handleSubmitAndAdd
+      >
+        {id ? "Salvar Alterações" : onAddUser ? "Cadastrar e Adicionar" : "Cadastrar Usuário"}
+      </Button>
+    </>
   );
+
+  // Se estiver sendo usado como um componente normal (não em um modal)
+  if (!isModal) {
+    return (
+      <Container>
+        <Paper elevation={3} sx={{ padding: 2, marginTop: 2 }}>
+          {renderContent()}
+        </Paper>
+      </Container>
+    );
+  }
+  
+  // Se estiver sendo usado em um modal, apenas retornar o conteúdo sem container
+  return renderContent();
+
+  async function handleSubmitAndAdd() {
+    await handleSubmit();
+  }
 }

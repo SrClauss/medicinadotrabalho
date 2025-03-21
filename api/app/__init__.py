@@ -49,7 +49,7 @@ def create_app(testing=False):
     app.config['FRONTEND_DEV_URL'] = os.getenv('FRONTEND_DEV_URL')
     app.config['FRONTEND_PROD_URL'] = os.getenv('FRONTEND_PROD_URL')
     app.config['FRONTEND_URL'] = app.config['FRONTEND_DEV_URL'] if app.config['MODE'] == 'development' else app.config['FRONTEND_PROD_URL']
-    
+    app.config['SQLALCHEMY_POOL_SIZE'] = 100  # Aumente para um valor maior
     if testing:
         app.config['TESTING'] = True
         app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('TEST_DATABASE_URL')

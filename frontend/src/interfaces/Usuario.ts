@@ -8,7 +8,7 @@ interface IUsuario {
     id: string;
     name: string;
     email: string;
-    address: IEndereco | null;
+    address: IEndereco[] | null;
     phone: string | null;
     cpf: string | null;
     role: number;
@@ -21,7 +21,7 @@ class Usuario implements IUsuario {
     id: string;
     name: string;
     email: string;
-    address: Endereco | null;
+    address: Endereco[] | null;
     phone: string | null;
     cpf: string | null;
     role: number;
@@ -33,7 +33,7 @@ class Usuario implements IUsuario {
         id: string,
         name: string,
         email: string,
-        address: Endereco | null,
+        address: Endereco[] | null,
         phone: string | null,
         cpf: string | null,
         role: number,
