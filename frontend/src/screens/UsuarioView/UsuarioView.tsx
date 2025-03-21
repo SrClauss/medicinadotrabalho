@@ -86,7 +86,7 @@ export default function UsuarioView() {
     setSearchPerformed(true);
   };
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+  const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page);
     setSearchPerformed(true);
   };

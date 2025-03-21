@@ -81,7 +81,7 @@ export default function CadastroUsuario({ onAddUser, id: propId, isModal = false
             }
           }
         })
-        .catch((error) => {
+        .catch(() => {
           setAlert({
             open: true,
             message: "Erro ao carregar dados do usuário para edição.",

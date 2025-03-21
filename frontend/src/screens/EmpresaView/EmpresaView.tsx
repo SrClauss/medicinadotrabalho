@@ -91,7 +91,7 @@ export default function EmpresaView() {
   };
 
   const handlePageChange = (
-    event: React.ChangeEvent<unknown>,
+    _: React.ChangeEvent<unknown>,
     page: number
   ) => {
     setCurrentPage(page);
