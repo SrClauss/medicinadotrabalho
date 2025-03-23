@@ -1,6 +1,6 @@
 import {AppBar, Paper, Typography, Switch } from '@mui/material';
 import { useAppTheme } from '../../providers/ThemeProvider/ThemeProvider';
-import { useState } from 'react';
+
 
 
 export default function Footer() {

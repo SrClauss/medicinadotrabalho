@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams} from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -60,7 +60,7 @@ export default function VerAgendamentosPorEmpresa() {
   const { isAdmin } = useUser();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
-  const navigate = useNavigate();
+  
 
   useEffect(() => {
     buscarAgendamentos();

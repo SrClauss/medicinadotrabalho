@@ -72,7 +72,7 @@ export default function CadastroEmpresa() {
                         }
                     }
                 })
-                .catch((error) => {
+                .catch(() => {
                     setAlert({
                         open: true,
                         message: "Erro ao carregar dados da empresa para edição.",

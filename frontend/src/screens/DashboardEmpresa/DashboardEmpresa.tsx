@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Container, Typography, Paper, Grid, Button, Fab } from '@mui/material';
 import { useUser } from '../../contexts/UserContext/UserContext';
 import { useNavigate } from 'react-router-dom';

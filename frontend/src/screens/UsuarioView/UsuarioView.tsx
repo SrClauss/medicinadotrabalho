@@ -24,7 +24,7 @@ import {
     Alert
 } from "@mui/material";
 import SearchBar from "../../components/SearchBar/SearchBar";
-import { Info, EventNote, Delete, Add, Edit } from "@mui/icons-material";
+import { Info,  Delete, Add, Edit } from "@mui/icons-material";
 import TitleForm from "../../components/TitleForm/TitleForm";
 import { useEffect, useState, useCallback } from "react";
 import { useUser } from "../../contexts/UserContext/UserContext";

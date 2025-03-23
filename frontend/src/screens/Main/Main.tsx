@@ -279,7 +279,7 @@ export default function Main() {
                   dataKey="total"
                   nameKey="name"
                 >
-                  {dashboardData.empresasComMaisExames.map((entry, index) => (
+                  {dashboardData.empresasComMaisExames.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

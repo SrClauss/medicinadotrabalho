@@ -17,6 +17,7 @@ build/
 # Flask API
 /api/instance
 /api/.venv
+/api/app/uploads
 /api/__pycache__
 /api/*.pyc
 /api/*.log

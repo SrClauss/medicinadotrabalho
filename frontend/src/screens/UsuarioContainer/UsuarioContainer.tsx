@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import UsuarioView from '../UsuarioView/UsuarioView';
-import { Container, Paper, Box, Typography, TextField, IconButton, Switch } from '@mui/material';
+import { Box, Typography, Switch } from '@mui/material';
 import CPFSearchView from '../../components/CPFSearchView/CPFSearchView';
-import SearchBar from '../../components/SearchBar/SearchBar';
-import TitleForm from '../../components/TitleForm/TitleForm';
-import { Search, PersonSearch } from '@mui/icons-material';
 
  const UsuarioContainer: React.FC = () => {
     const [pesquisaPorCPF, setPesquisaPorCPF] = useState(false);

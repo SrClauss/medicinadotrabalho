@@ -1,4 +1,4 @@
-import { FormControl, InputLabel,InputAdornment, IconButton, TextField, Box } from "@mui/material";
+import { InputAdornment, IconButton, TextField, Box } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { useState } from "react";
 interface SerchBarProps{

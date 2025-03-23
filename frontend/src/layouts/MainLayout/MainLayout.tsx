@@ -6,7 +6,7 @@ import { useUser } from "../../contexts/UserContext/UserContext";
 import { Navigate } from "react-router-dom";
 
 const MainLayout = ({ children }: { children: ReactNode }) => {
-  const { isAuthenticated, isAdmin, user } = useUser();
+  const { isAuthenticated, isAdmin} = useUser();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
