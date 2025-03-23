@@ -21,7 +21,7 @@ import {
   ListItemText,
   Divider,
 } from '@mui/material';
-import { FilterList, Info, Scanner, Search, Send } from '@mui/icons-material';
+import { Delete, Edit, FilterList, Info, Scanner, Search, Send } from '@mui/icons-material';
 import TitleForm from '../../components/TitleForm/TitleForm';
 import { useUser } from '../../contexts/UserContext/UserContext';
 
@@ -56,7 +56,7 @@ export default function VerAgendamentosPorEmpresa() {
   const { token } = useUser();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [selectedExamInfo, setSelectedExamInfo] = useState<Exam | null>(null);
-
+  const {isAdmin} = useUser();
   useEffect(() => {
     // Buscar agendamentos ao montar o componente ou quando companyId mudar
     buscarAgendamentos();
@@ -109,7 +109,31 @@ export default function VerAgendamentosPorEmpresa() {
   };
 
   const open = Boolean(anchorEl);
+  const handleDeleteExam = async (examId: string) => {
 
+    if (window.confirm("Tem certeza que deseja excluir este exame?")) {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_BASE_URL}/exames/deletar/${examId}`,
+          {
+            method: "DELETE",
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (response.ok) {
+          buscarAgendamentos();
+        } else {
+          console.error('Erro ao excluir exame:', response.status);
+        }
+      } catch (error) {
+        console.error('Erro ao excluir exame:', error);
+      }
+    }
+  }
   return (
     <Container>
       <Paper elevation={3}>
@@ -118,16 +142,17 @@ export default function VerAgendamentosPorEmpresa() {
           <Typography variant="h6" gutterBottom>
             Filtrar Agendamentos
           </Typography>
-          <Divider sx={{margin: "20px 0px"}} />
+          <Divider sx={{ margin: "20px 0px" }} />
           <Box sx={{ display: 'flex', gap: 2, marginBottom: 2 }}>
             <TextField
-                 
-              size='small'           
+
+              size='small'
               label="Data Inicial"
               slotProps={{
                 inputLabel: {
                   shrink: true,
-                }}}
+                }
+              }}
               type="date"
               value={dataInicial}
               onChange={(e) => setDataInicial(e.target.value)}
@@ -139,14 +164,15 @@ export default function VerAgendamentosPorEmpresa() {
               slotProps={{
                 inputLabel: {
                   shrink: true,
-                }}}
-              
+                }
+              }}
+
               value={dataFinal}
               onChange={(e) => setDataFinal(e.target.value)}
             />
             <Button variant="contained" onClick={buscarAgendamentos}>
-                <FilterList />
-                <Typography variant="button">Filtrar</Typography>
+              <FilterList />
+              <Typography variant="button">Filtrar</Typography>
 
             </Button>
           </Box>
@@ -175,16 +201,34 @@ export default function VerAgendamentosPorEmpresa() {
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Digitalizar Imagem">
+                          <span>
                             <IconButton disabled={!exam.image_uploaded}>
-                                <Scanner color={exam.image_uploaded?"disabled":"success"} />
+                              <Scanner color={exam.image_uploaded ? "disabled" : "success"} />
                             </IconButton>
+                          </span>
                         </Tooltip>
                         <Tooltip title="Enviar exame por email">
-
+                          <span>
                             <IconButton disabled={exam.image_uploaded}>
-                                <Send color={exam.image_uploaded?"success":"disabled"} />
+                              <Send color={exam.image_uploaded ? "success" : "disabled"} />
                             </IconButton>
+                          </span>
                         </Tooltip>
+
+           
+                        {
+                          isAdmin() && 
+
+                            (
+
+                              <Tooltip title="Deletar">
+                                <IconButton onClick={() => handleDeleteExam(exam.id)}>
+                                  <Delete color="error" />
+                                </IconButton>
+                              </Tooltip>
+                            
+                            )
+                        }
                       </TableCell>
                     </TableRow>
                   ))}

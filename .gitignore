@@ -27,3 +27,8 @@ build/
 /frontend/build
 /frontend/.env
 /frontend/.cache
+
+
+
+#scanner
+/scanner/.venv

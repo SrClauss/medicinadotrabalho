@@ -113,11 +113,21 @@ export default function CadastroUsuario({ onAddUser, id: propId, isModal = false
         },
         body: JSON.stringify({
           ...user,
-          address: adresses, // Enviar como array diretamente
+          address: adresses.map(endereco => ({
+            logradouro: endereco.logradouro,
+            numero: endereco.numero,
+            bairro: endereco.bairro,
+            cidade: endereco.cidade,
+            estado: endereco.estado,
+            cep: endereco.cep
+          })), // Enviar como array de objetos JSON
         }),
       });
 
       if (response.ok) {
+        if (!id){
+          navigator.clipboard.writeText(response.url);
+        }
         setAlert({
           open: true,
           message: id? `Usuário ${id} atualizado com sucesso!` : "Usuário cadastrado com sucesso!",

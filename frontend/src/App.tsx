@@ -16,6 +16,9 @@ import LoginScreen from './screens/LoginScreen/LoginScreen';
 import RecuperacaoSenha from './screens/RecuperacaoSenha/RecuperacaoSenha';
 import AgendamentoPorEmpresa from './screens/AgendamentoPorEmpresa/AgendamentoPorEmpresa';
 import VerAgendamentosPorEmpresa from './screens/VerAgendamentosPorEmpresa/VerAgendamentosPorEmpresa';
+import UsuarioContainer from './screens/UsuarioContainer/UsuarioContainer';
+import EmpresaContainer from './screens/EmpresaContainer/EmpresaContainer';
+
 export function App() {
   return (
     <ThemeProvider>
@@ -30,12 +33,14 @@ export function App() {
             <Route path="/cadastro-usuario" element={<MainLayout><CadastroUsuario /></MainLayout>} />
             <Route path="/editar-usuario/:id" element={<MainLayout><CadastroUsuario /></MainLayout>} />
             <Route path="/usuarios/:searchTerm?" element={<MainLayout><UsuarioView /></MainLayout>} />
+            <Route path="/usuarios-container" element={<MainLayout><UsuarioContainer /></MainLayout>} />
             <Route path="/cadastro-empresa" element={<MainLayout><CadastroEmpresa /></MainLayout>} />
             <Route path="/editar-empresa/:id" element={<MainLayout><CadastroEmpresa /></MainLayout>} />
             <Route path="/empresas/:searchTerm?" element={<MainLayout><EmpresaView /></MainLayout>} />
             <Route path="/redefine-senha" element={<OfflineLayout><RecuperacaoSenha /></OfflineLayout>} />
             <Route path="/agendamento-empresa/:companyId" element={<MainLayout><AgendamentoPorEmpresa /></MainLayout>} />
             <Route path="/ver-agendamentos-por-empresa/:companyId/:companyName" element={<MainLayout><VerAgendamentosPorEmpresa /></MainLayout>} />
+            <Route path="/empresas-container" element={<MainLayout><EmpresaContainer /></MainLayout>} />
           </Routes>
         </UserProvider>
       </Router>

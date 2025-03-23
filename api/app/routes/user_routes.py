@@ -7,8 +7,6 @@ from bcrypt import hashpw, gensalt
 import json
 from datetime import datetime, timedelta
 from sqlalchemy import func
-import unicodedata
-from unidecode import unidecode  # Importe a biblioteca unidecode
 
 user_bp = Blueprint('user', __name__)
 
@@ -30,6 +28,7 @@ def enviar_email_verificacao(user_dto: UserDTO):
     html = f'<b>Bem-vindo! Por favor, confirme seu e-mail clicando <a href="{confirm_url}">aqui</a>.</b>'
     assunto = "Por favor, confirme seu e-mail"
     enviar_email(user_dto.email, assunto, html)
+    return confirm_url
 
 @user_bp.route('/usuario/reenviaremail/<id>', methods=['GET'])
 def reenviaemail(id):
@@ -62,15 +61,11 @@ def registrar():
             return jsonify({"erro": "CPF já registrado"}), 409
 
         address_data = dados.get('address')
-        if isinstance(address_data, list):
-            address_json = json.dumps(address_data)
-        else:
-            address_json = address_data
 
         user = User(
             name=dados['name'],
             email=dados['email'],
-            address=address_json,
+            address=address_data,
             phone=dados['phone'],
             cpf=dados['cpf'],
             password_hash="",
@@ -83,9 +78,11 @@ def registrar():
         db.commit()
 
         user_dto = UserDTO.from_model(user)
-        enviar_email_verificacao(user_dto)
+        url_frontend = enviar_email_verificacao(user_dto)
 
-        return jsonify({"mensagem": "Verifique seu e-mail para confirmar a conta."}), 201
+        return jsonify({"mensagem": "Verifique seu e-mail para confirmar a conta.",
+                        "url": url_frontend
+                        }), 201
     except Exception as e:
         db.rollback()
         current_app.logger.error(f"Erro ao registrar usuário: {str(e)}")
@@ -239,11 +236,7 @@ def editar(id):
         user.updated_at = datetime.now()
 
         address_data = dados.get('address')
-        if isinstance(address_data, list):
-            address_json = json.dumps(address_data)
-        else:
-            address_json = address_data
-        user.address = address_json
+        user.address = address_data
 
         db.commit()
         return jsonify({"mensagem": "Usuário atualizado com sucesso"}), 200
@@ -281,3 +274,30 @@ def limpar_pendentes():
         db.rollback()
         current_app.logger.error(f"Erro ao limpar usuários inativos: {str(e)}")
         return jsonify({"erro": "Erro ao limpar registros inativos"}), 500
+
+
+@user_bp.route('/usuario/find_by_cpf/<cpf>', methods=['GET'])
+def find_by_cpf(cpf):
+    print(cpf)
+    try:
+        db = get_db()
+        user = db.query(User).filter(User.cpf == cpf).first()
+        
+        print(user)
+        if not user:
+            return jsonify({"erro": "Usuário não encontrado"}), 404
+        return jsonify({
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "ativo": user.ativo,
+            "address": user.address,
+            "phone": user.phone,
+            "cpf": user.cpf,
+            "role": user.role,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "updated_at": user.updated_at.isoformat() if user.updated_at else None
+        }), 200
+    except Exception as e:
+        current_app.logger.error(f"Erro ao obter usuário por CPF: {str(e)}")
+        return jsonify({"erro": "Erro ao obter usuário por CPF"}), 500

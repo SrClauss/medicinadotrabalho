@@ -15,13 +15,12 @@ import {
   Business,
   Send,
   Contacts,
-  AdminPanelSettings,
   Logout,
   Apartment,
 } from "@mui/icons-material";
 
 export default function ButtonAppBar() {
-  const { user, logout, isAdmin } = useUser();
+  const {logout} = useUser();
 
   return (
     <AppBar position="static">
@@ -127,7 +126,7 @@ export default function ButtonAppBar() {
           </Link>
           <Divider orientation="vertical" flexItem />
           <Link
-            to="/empresas"
+            to="/empresas-container"
             style={{
               textDecoration: "none",
               color: "inherit",
@@ -152,7 +151,7 @@ export default function ButtonAppBar() {
           </Link>
           <Divider orientation="vertical" flexItem />
           <Link
-            to="/usuarios/"
+            to="/usuarios-container/"
             style={{
               textDecoration: "none",
               color: "inherit",
@@ -175,60 +174,7 @@ export default function ButtonAppBar() {
               </Typography>
             </Box>
           </Link>
-          <Divider orientation="vertical" flexItem />
-          <Link
-            to="/enviar-exames"
-            style={{
-              textDecoration: "none",
-              color: "inherit",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
-                padding: 1,
-                borderRadius: 1,
-              }}
-            >
-              <Send />
-              <Typography variant="caption" sx={{ ml: 1 }}>
-                Enviar Exames
-              </Typography>
-            </Box>
-          </Link>
-          {isAdmin() && (
-            <>
-              <Divider orientation="vertical" flexItem />
-              <Link
-                to="/painel-administrativo"
-                style={{
-                  textDecoration: "none",
-                  color: "inherit",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
-                    padding: 1,
-                    borderRadius: 1,
-                  }}
-                >
-                  <AdminPanelSettings />
-                  <Typography variant="caption" sx={{ ml: 1 }}>
-                    Painel Administrativo
-                  </Typography>
-                </Box>
-              </Link>
-            </>
-          )}
+         
         </Box>
       </Toolbar>
     </AppBar>
