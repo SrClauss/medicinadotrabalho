@@ -8,6 +8,7 @@ import json
 from datetime import datetime, timedelta
 from sqlalchemy import func
 import ulid
+from app.models.exam import Exam
 
 user_bp = Blueprint('user', __name__)
 
