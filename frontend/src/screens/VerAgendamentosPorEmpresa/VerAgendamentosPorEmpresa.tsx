@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -21,9 +21,10 @@ import {
   ListItemText,
   Divider,
 } from '@mui/material';
-import { Delete, Edit, FilterList, Info, Scanner, Search, Send } from '@mui/icons-material';
+import { Delete, FilterList, Info, Scanner, Send } from '@mui/icons-material';
 import TitleForm from '../../components/TitleForm/TitleForm';
 import { useUser } from '../../contexts/UserContext/UserContext';
+import UploadImagesModal from '../../components/UploadImagesModal/UploadImagesModal';
 
 interface Exam {
   id: string;
@@ -56,25 +57,24 @@ export default function VerAgendamentosPorEmpresa() {
   const { token } = useUser();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [selectedExamInfo, setSelectedExamInfo] = useState<Exam | null>(null);
-  const {isAdmin} = useUser();
+  const { isAdmin } = useUser();
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+  const navigate = useNavigate();
+
   useEffect(() => {
-    // Buscar agendamentos ao montar o componente ou quando companyId mudar
     buscarAgendamentos();
   }, [companyId]);
 
   const buscarAgendamentos = async () => {
     if (!companyId) return;
-
     let url = `${import.meta.env.VITE_BASE_URL}/exames/listar_por_empresa_e_datas?company_id=${companyId}`;
-
     if (dataInicial) {
       url += `&data_inicial=${dataInicial}`;
     }
-
     if (dataFinal) {
       url += `&data_final=${dataFinal}`;
     }
-
     try {
       const response = await fetch(url, {
         headers: {
@@ -95,6 +95,31 @@ export default function VerAgendamentosPorEmpresa() {
     }
   };
 
+  // Função para enviar exame por email usando a rota configurada
+  const enviarExamePorEmail = async (examId: string) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_URL}/exames/notificar_exame_pronto/${examId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.ok) {
+        alert("Exame enviado por email com sucesso!");
+        buscarAgendamentos(); // Atualiza a lista se necessário
+      } else {
+        alert("Erro ao enviar exame por email");
+      }
+    } catch (error) {
+      console.error("Erro ao enviar exame por email:", error);
+      alert("Erro ao enviar exame por email");
+    }
+  };
+
   const handlePopoverOpen = (
     event: React.MouseEvent<HTMLButtonElement>,
     exam: Exam
@@ -110,7 +135,6 @@ export default function VerAgendamentosPorEmpresa() {
 
   const open = Boolean(anchorEl);
   const handleDeleteExam = async (examId: string) => {
-
     if (window.confirm("Tem certeza que deseja excluir este exame?")) {
       try {
         const response = await fetch(
@@ -123,7 +147,6 @@ export default function VerAgendamentosPorEmpresa() {
             }
           }
         );
-
         if (response.ok) {
           buscarAgendamentos();
         } else {
@@ -133,7 +156,19 @@ export default function VerAgendamentosPorEmpresa() {
         console.error('Erro ao excluir exame:', error);
       }
     }
-  }
+  };
+
+  const handleOpenUploadModal = (exam: Exam) => {
+    setSelectedExam(exam);
+    setIsUploadModalOpen(true);
+  };
+
+  const handleCloseUploadModal = () => {
+    setIsUploadModalOpen(false);
+    setSelectedExam(null);
+    buscarAgendamentos();
+  };
+
   return (
     <Container>
       <Paper elevation={3}>
@@ -145,14 +180,9 @@ export default function VerAgendamentosPorEmpresa() {
           <Divider sx={{ margin: "20px 0px" }} />
           <Box sx={{ display: 'flex', gap: 2, marginBottom: 2 }}>
             <TextField
-
               size='small'
               label="Data Inicial"
-              slotProps={{
-                inputLabel: {
-                  shrink: true,
-                }
-              }}
+              slotProps={{ inputLabel: { shrink: true } }}
               type="date"
               value={dataInicial}
               onChange={(e) => setDataInicial(e.target.value)}
@@ -161,22 +191,15 @@ export default function VerAgendamentosPorEmpresa() {
               size='small'
               label="Data Final"
               type="date"
-              slotProps={{
-                inputLabel: {
-                  shrink: true,
-                }
-              }}
-
+              slotProps={{ inputLabel: { shrink: true } }}
               value={dataFinal}
               onChange={(e) => setDataFinal(e.target.value)}
             />
             <Button variant="contained" onClick={buscarAgendamentos}>
               <FilterList />
               <Typography variant="button">Filtrar</Typography>
-
             </Button>
           </Box>
-
           {exames.length > 0 && (
             <TableContainer component={Paper}>
               <Table>
@@ -200,35 +223,33 @@ export default function VerAgendamentosPorEmpresa() {
                             <Info color="info" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Digitalizar Imagem">
+                        <Tooltip title="Obter imagem">
                           <span>
-                            <IconButton disabled={!exam.image_uploaded}>
+                            <IconButton
+                              onClick={() => handleOpenUploadModal(exam)}
+                              disabled={exam.image_uploaded}
+                            >
                               <Scanner color={exam.image_uploaded ? "disabled" : "success"} />
                             </IconButton>
                           </span>
                         </Tooltip>
                         <Tooltip title="Enviar exame por email">
                           <span>
-                            <IconButton disabled={exam.image_uploaded}>
+                            <IconButton
+                              disabled={!exam.image_uploaded}
+                              onClick={() => enviarExamePorEmail(exam.id)}
+                            >
                               <Send color={exam.image_uploaded ? "success" : "disabled"} />
                             </IconButton>
                           </span>
                         </Tooltip>
-
-           
-                        {
-                          isAdmin() && 
-
-                            (
-
-                              <Tooltip title="Deletar">
-                                <IconButton onClick={() => handleDeleteExam(exam.id)}>
-                                  <Delete color="error" />
-                                </IconButton>
-                              </Tooltip>
-                            
-                            )
-                        }
+                        {isAdmin() && (
+                          <Tooltip title="Deletar">
+                            <IconButton onClick={() => handleDeleteExam(exam.id)}>
+                              <Delete color="error" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -236,19 +257,12 @@ export default function VerAgendamentosPorEmpresa() {
               </Table>
             </TableContainer>
           )}
-
           <Popover
             open={open}
             anchorEl={anchorEl}
             onClose={handlePopoverClose}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'left',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'left',
-            }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           >
             <Paper elevation={3} sx={{ padding: 2, maxWidth: 400 }}>
               {selectedExamInfo && (
@@ -309,6 +323,14 @@ export default function VerAgendamentosPorEmpresa() {
           </Popover>
         </Box>
       </Paper>
+      {selectedExam && (
+        <UploadImagesModal
+          open={isUploadModalOpen}
+          onClose={handleCloseUploadModal}
+          examId={selectedExam.id}
+          name={selectedExam.user?.name || 'N/A'}
+        />
+      )}
     </Container>
   );
 }

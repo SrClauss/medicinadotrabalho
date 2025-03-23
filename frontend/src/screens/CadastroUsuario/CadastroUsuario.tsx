@@ -125,23 +125,22 @@ export default function CadastroUsuario({ onAddUser, id: propId, isModal = false
       });
 
       if (response.ok) {
-        if (!id){
-          navigator.clipboard.writeText(response.url);
-        }
+        const data = await response.json();
+
         setAlert({
           open: true,
           message: id? `Usuário ${id} atualizado com sucesso!` : "Usuário cadastrado com sucesso!",
           severity: "success",
         });
         
-        const data = await response.json();
-        
         // Se for um cadastro e tiver a função onAddUser, chamar essa função
         if (!id && onAddUser) {
+          // Extrair o usuário do response
+          const newUser = data.user;
+
           // Criar objeto de usuário completo para retornar
           const novoUsuario: Usuario = {
-            ...user,
-            id: data.id, // Usar o ID retornado pela API
+            ...newUser,
             address: adresses,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -323,9 +322,9 @@ export default function CadastroUsuario({ onAddUser, id: propId, isModal = false
         variant="contained"
         color="primary"
         fullWidth
-        onClick={handleSubmitAndAdd} // Alterado para handleSubmitAndAdd
+        onClick={handleSubmit}
       >
-        {id ? "Salvar Alterações" : onAddUser ? "Cadastrar e Adicionar" : "Cadastrar Usuário"}
+        {id ? "Salvar Alterações" : "Cadastrar Usuário"}
       </Button>
     </>
   );
@@ -343,8 +342,4 @@ export default function CadastroUsuario({ onAddUser, id: propId, isModal = false
   
   // Se estiver sendo usado em um modal, apenas retornar o conteúdo sem container
   return renderContent();
-
-  async function handleSubmitAndAdd() {
-    await handleSubmit();
-  }
 }

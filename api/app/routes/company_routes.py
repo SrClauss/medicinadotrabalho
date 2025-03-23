@@ -6,6 +6,7 @@ from bcrypt import hashpw, gensalt
 from datetime import datetime, timedelta, timezone
 from app.models.user import User
 import json
+import ulid
 
 company_bp = Blueprint("company", __name__)
 
@@ -79,8 +80,10 @@ def registrar():
             return jsonify({"erro": "CNPJ já registrado"}), 409
 
         address_data = dados.get("address")
+        new_company_id = str(ulid.new())
 
         company = Company(
+            id = new_company_id,
             name=dados["name"],
             email=dados["email"],
             address=address_data,
@@ -95,18 +98,27 @@ def registrar():
         db.add(company)
         db.commit()
 
+        # Serializar a empresa para o formato JSON (incluindo o ID)
+        company_dict = {
+            "id": company.id,
+            "name": company.name,
+            "email": company.email,
+            "cnpj": company.cnpj,
+            "address": company.address,
+            "phone": company.phone,
+            "ativo": company.ativo,
+            "created_at": company.created_at.isoformat() if company.created_at else None,
+            "updated_at": company.updated_at.isoformat() if company.updated_at else None
+        }
+
         company_dto = CompanyDTO.from_model(company)
         url_frontend = enviar_email_verificacao(company_dto)
 
-        return (
-            jsonify(
-                {
+        return jsonify({
                     "mensagem": "Verifique seu e-mail para confirmar a conta.",
                     "url": url_frontend,
-                }
-            ),
-            201,
-        )
+                    "company": company_dict  # Retorna os dados da empresa
+                }), 201
     except Exception as e:
         db.rollback()
         current_app.logger.error(f"Erro ao registrar empresa: {str(e)}")
@@ -245,26 +257,20 @@ def obter(id):
         company = db.query(Company).get(id)
         if not company:
             return jsonify({"erro": "Empresa não encontrada"}), 404
-        return (
-            jsonify(
-                {
-                    "id": company.id,
-                    "name": company.name,
-                    "email": company.email,
-                    "ativo": company.ativo,
-                    "address": company.address,
-                    "phone": company.phone,
-                    "cnpj": company.cnpj,
-                    "created_at": (
-                        company.created_at.isoformat() if company.created_at else None
-                    ),
-                    "updated_at": (
-                        company.updated_at.isoformat() if company.updated_at else None
-                    ),
-                }
-            ),
-            200,
-        )
+        
+        company_dict = {
+            "id": company.id,
+            "name": company.name,
+            "email": company.email,
+            "cnpj": company.cnpj,
+            "address": company.address,
+            "phone": company.phone,
+            "ativo": company.ativo,
+            "created_at": company.created_at.isoformat() if company.created_at else None,
+            "updated_at": company.updated_at.isoformat() if company.updated_at else None
+        }
+        
+        return jsonify({"company": company_dict}), 200
     except Exception as e:
         current_app.logger.error(f"Erro ao obter empresa: {str(e)}")
         return jsonify({"erro": "Erro ao obter empresa"}), 500
@@ -341,7 +347,21 @@ def editar(id):
         company.address = address_data
 
         db.commit()
-        return jsonify({"mensagem": "Empresa atualizada com sucesso"}), 200
+        
+        # Serializar a empresa para o formato JSON (incluindo o ID)
+        company_dict = {
+            "id": company.id,
+            "name": company.name,
+            "email": company.email,
+            "cnpj": company.cnpj,
+            "address": company.address,
+            "phone": company.phone,
+            "ativo": company.ativo,
+            "created_at": company.created_at.isoformat() if company.created_at else None,
+            "updated_at": company.updated_at.isoformat() if company.updated_at else None
+        }
+        
+        return jsonify({"mensagem": "Empresa atualizada com sucesso", "company": company_dict}), 200
     except Exception as e:
         db.rollback()
         current_app.logger.error(f"Erro ao atualizar empresa: {str(e)}")
@@ -382,6 +402,7 @@ def get_all_companies(page, limit):
         return jsonify({"pages": pages, "list": company_list}), 200
     except Exception as e:
         current_app.logger.error(f"Erro ao obter todas as empresas: {str(e)}")
+        return jsonify({"erro": "Erro ao obter todas as empresas"}), 500
 
 @company_bp.route("/empresas/find_by_cnpj/<cnpj>", methods=["GET"])
 def find_by_cnpj(cnpj):
@@ -391,7 +412,20 @@ def find_by_cnpj(cnpj):
         company = db.query(Company).filter(Company.cnpj == cnpj).first()
         if not company:
             return jsonify({"erro": "Empresa não encontrada"}), 404
-        return jsonify(company.to_dict()), 200
+        
+        company_dict = {
+            "id": company.id,
+            "name": company.name,
+            "email": company.email,
+            "cnpj": company.cnpj,
+            "address": company.address,
+            "phone": company.phone,
+            "ativo": company.ativo,
+            "created_at": company.created_at.isoformat() if company.created_at else None,
+            "updated_at": company.updated_at.isoformat() if company.updated_at else None
+        }
+        
+        return jsonify({"company": company_dict}), 200
     except Exception as e:
         current_app.logger.error(f"Erro ao buscar empresa por CNPJ: {str(e)}")
         return jsonify({"erro": "Erro ao buscar empresa por CNPJ"}), 500

@@ -74,7 +74,6 @@ export default function AdressDialog({ open, onClose,  onConfirm }: IAdressDialo
             cidade: cidade,
             estado: estado
         });
-        console.log(endereco);
         onConfirm(endereco);
     }
 

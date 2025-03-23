@@ -111,6 +111,9 @@ export default function CadastroEmpresa() {
             });
 
             if (response.ok) {
+                const data = await response.json();
+                const newCompany = data.company;
+
                 setAlert({
                     open: true,
                     message: `Empresa ${id ? "atualizada" : "cadastrada"} com sucesso!`,
@@ -118,7 +121,7 @@ export default function CadastroEmpresa() {
                 });
                 // Redireciona para EmpresaView com o nome da empresa como searchTerm
                 setTimeout(() => {
-                    navigate(`/empresas/${empresa.name}`);
+                    navigate(`/empresas/${newCompany.name}`);
                 }, 3000);
             } else {
                 const errorData = await response.json();

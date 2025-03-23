@@ -13,7 +13,7 @@ import { useUser } from "../../contexts/UserContext/UserContext";
 import {
   Person,
   Business,
-  Send,
+  Home,
   Contacts,
   Logout,
   Apartment,
@@ -67,6 +67,46 @@ export default function ButtonAppBar() {
           display: { xs: "none", md: "flex" },
         }}
       >
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            flexGrow: 1,
+            justifyContent: "space-around",
+          }}
+        >
+          <Link
+            to="/"
+            style={{
+              textDecoration: "none",
+              color: "inherit",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+                padding: 1,
+                borderRadius: 1,
+              }}
+            >
+              <Home />
+              <Typography variant="caption" sx={{ ml: 1 }}>
+                Home
+              </Typography>
+            </Box>
+          </Link>
+
+          <Divider orientation="vertical" flexItem />
+         
+
+          </Box>
+
+
+
         <Box
           sx={{
             display: "flex",

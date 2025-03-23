@@ -218,11 +218,7 @@ export default function UsuarioView() {
                                                     <Info color="info" />
                                                 </IconButton>
                                             </Tooltip>
-                                            <Tooltip title="Agendamentos">
-                                                <IconButton>
-                                                    <EventNote color="warning" />
-                                                </IconButton>
-                                            </Tooltip>
+                                      
                                             {isAdmin() && (
                                                 <>
                                                     <Tooltip title="Editar">

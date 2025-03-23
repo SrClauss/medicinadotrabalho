@@ -17,11 +17,10 @@ import unicodedata
 # Criando o Blueprint para rotas de autenticação
 auth_bp = Blueprint('auth', __name__)
 
-
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """
-    Autentica um usuário e retorna um token JWT
+    Autentica um usuário ou empresa e retorna um token JWT
     """
     data = request.get_json()
     
@@ -42,11 +41,11 @@ def login():
         return jsonify({'token': token})
     
     if company and checkpw(data['password'].encode('utf-8'), company.password_hash.encode('utf-8')):   
-        token = jwt.encode({'sub': company.id, 'exp': datetime.now(timezone.utc) + timedelta(hours=1)}, current_app.config['SECRET_KEY'], algorithm='HS256')
+        # Modificado para incluir role=4 para empresas
+        token = jwt.encode({'sub': company.id, 'role': 4, 'exp': datetime.now(timezone.utc) + timedelta(hours=1)}, current_app.config['SECRET_KEY'], algorithm='HS256')
         return jsonify({'token': token})
     
-    return jsonify({'message': 'Email ou senha inválidos'}), 401
-    
+    return jsonify({'message': 'Email ou senha inválidos'}), 401   
 
 @auth_bp.route('/recover-password', methods=['POST'])
 def recover_password():

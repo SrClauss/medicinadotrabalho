@@ -20,11 +20,16 @@ export default function LoginScreen() {
   const [message, setMessage] = useState("");
   const [severity, setSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('error');
   const [open, setOpen] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const navigate = useNavigate();
   const { setToken, fetchUserData } = useUser();
 
   const handleLogin = async () => {
+    // Evitar múltiplos cliques no botão de login
+    if (isLoggingIn) return;
+    
     try {
+      setIsLoggingIn(true);
       const baseUrl = import.meta.env.VITE_BASE_URL;
       const response = await fetch(`${baseUrl}/login`, {
         method: "POST",
@@ -50,6 +55,7 @@ export default function LoginScreen() {
       setSeverity('success');
       setOpen(true);
 
+      // Armazenar o token e buscar os dados do usuário uma única vez
       setToken(data.token);
       await fetchUserData();
       navigate("/");
@@ -62,6 +68,8 @@ export default function LoginScreen() {
       );
       setSeverity('error');
       setOpen(true);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -102,6 +110,10 @@ export default function LoginScreen() {
             gap: 2,
             mt: 2,
           }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleLogin();
+          }}
         >
           <TextField
             label="Email"
@@ -117,8 +129,13 @@ export default function LoginScreen() {
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
           />
-          <Button variant="contained" onClick={handleLogin}>
-            Entrar
+          <Button 
+            variant="contained" 
+            onClick={handleLogin}
+            disabled={isLoggingIn}
+            type="submit"
+          >
+            {isLoggingIn ? 'Entrando...' : 'Entrar'}
           </Button>
           <Button variant="text" onClick={() => navigate("/redefine-senha")}>
             Esqueci minha senha

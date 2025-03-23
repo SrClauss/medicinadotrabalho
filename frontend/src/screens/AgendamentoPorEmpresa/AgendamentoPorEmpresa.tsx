@@ -183,6 +183,7 @@ export default function AgendamentoPorEmpresa() {
         description,
       };
 
+
       const response = await fetch(
         `${import.meta.env.VITE_BASE_URL}/exames/criar_em_lote`,
         {
@@ -284,6 +285,7 @@ export default function AgendamentoPorEmpresa() {
   const handleAddNewUser = (user: Usuario) => {
     setSelectedUsers((prev) => {
       if (prev.some((u) => u.id === user.id)) {
+        console.log("Usuário já existe na lista");
         return prev;
       }
       return [...prev, user];

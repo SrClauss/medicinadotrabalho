@@ -7,6 +7,7 @@ from bcrypt import hashpw, gensalt
 import json
 from datetime import datetime, timedelta
 from sqlalchemy import func
+import ulid
 
 user_bp = Blueprint('user', __name__)
 
@@ -61,8 +62,10 @@ def registrar():
             return jsonify({"erro": "CPF já registrado"}), 409
 
         address_data = dados.get('address')
+        new_user_id = str(ulid.new())
 
         user = User(
+            id = new_user_id,
             name=dados['name'],
             email=dados['email'],
             address=address_data,
@@ -77,11 +80,26 @@ def registrar():
         db.add(user)
         db.commit()
 
+        # Serializar o usuário para o formato JSON (incluindo o ID)
+        user_dict = {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "address": user.address,
+            "phone": user.phone,
+            "cpf": user.cpf,
+            "ativo": user.ativo,
+            "role": user.role,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "updated_at": user.updated_at.isoformat() if user.updated_at else None
+        }
+
         user_dto = UserDTO.from_model(user)
         url_frontend = enviar_email_verificacao(user_dto)
 
         return jsonify({"mensagem": "Verifique seu e-mail para confirmar a conta.",
-                        "url": url_frontend
+                        "url": url_frontend,
+                        "user": user_dict  # Retorna os dados do usuário
                         }), 201
     except Exception as e:
         db.rollback()
@@ -239,7 +257,22 @@ def editar(id):
         user.address = address_data
 
         db.commit()
-        return jsonify({"mensagem": "Usuário atualizado com sucesso"}), 200
+        
+        # Serializar o usuário para o formato JSON (incluindo o ID)
+        user_dict = {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "address": user.address,
+            "phone": user.phone,
+            "cpf": user.cpf,
+            "ativo": user.ativo,
+            "role": user.role,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "updated_at": user.updated_at.isoformat() if user.updated_at else None
+        }
+        
+        return jsonify({"mensagem": "Usuário atualizado com sucesso", "user": user_dict}), 200
     except Exception as e:
         db.rollback()
         current_app.logger.error(f"Erro ao atualizar usuário: {str(e)}")
@@ -301,3 +334,65 @@ def find_by_cpf(cpf):
     except Exception as e:
         current_app.logger.error(f"Erro ao obter usuário por CPF: {str(e)}")
         return jsonify({"erro": "Erro ao obter usuário por CPF"}), 500
+    
+    
+
+# Rota para obter dados da dashboard do trabalhador
+@user_bp.route('/dashboard/trabalhador/<user_id>', methods=['GET'])
+def obter_dados_dashboard_trabalhador(user_id):
+    try:
+        db = get_db()
+
+        # 1. Obter informações do usuário
+        user = db.query(User).get(user_id)
+        if not user:
+            return jsonify({"erro": "Usuário não encontrado"}), 404
+
+        user_data = {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "ativo": user.ativo,
+            "address": user.address,
+            "phone": user.phone,
+            "cpf": user.cpf,
+            "role": user.role,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "updated_at": user.updated_at.isoformat() if user.updated_at else None
+        }
+
+        # 2. Obter exames agendados para o usuário
+        hoje = datetime.now().date()
+        exames_agendados = db.query(Exam).filter(Exam.user_id == user_id, Exam.exam_date >= hoje).all()
+        exames_agendados_list = [{
+            "id": exame.id,
+            "description": exame.description,
+            "exam_date": exame.exam_date.isoformat() if exame.exam_date else None,
+            "company_id": exame.company_id
+        } for exame in exames_agendados]
+
+        # 3. Obter histórico de exames do usuário
+        exames_anteriores = db.query(Exam).filter(Exam.user_id == user_id, Exam.exam_date < hoje).all()
+        exames_anteriores_list = [{
+            "id": exame.id,
+            "description": exame.description,
+            "exam_date": exame.exam_date.isoformat() if exame.exam_date else None,
+            "company_id": exame.company_id,
+            "image_uploaded": exame.image_uploaded
+        } for exame in exames_anteriores]
+
+        # 4. Calcular estatísticas (total de exames, exames com imagem, etc.)
+        total_exames = db.query(Exam).filter(Exam.user_id == user_id).count()
+        exames_com_imagem = db.query(Exam).filter(Exam.user_id == user_id, Exam.image_uploaded == True).count()
+
+        return jsonify({
+            "user": user_data,
+            "exames_agendados": exames_agendados_list,
+            "exames_anteriores": exames_anteriores_list,
+            "total_exames": total_exames,
+            "exames_com_imagem": exames_com_imagem
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Erro ao obter dados da dashboard do trabalhador: {str(e)}")
+        return jsonify({"erro": "Erro ao obter dados da dashboard do trabalhador"}), 500
