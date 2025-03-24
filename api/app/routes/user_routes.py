@@ -202,6 +202,8 @@ def get_all_users(page, limit):
 @user_bp.route('/usuarios/find_by_substring/<substring>', defaults={'page': 1, 'limit': 10}, methods=['GET'])
 @user_bp.route('/usuarios/find_by_substring/<substring>/<int:page>/<int:limit>', methods=['GET'])
 def find_by_substring(substring, page, limit):
+    print(current_app.config["FRONTEND_URL"])
+    print("abruama")
     try:
         db = get_db()
         # Remova a normalização do substring

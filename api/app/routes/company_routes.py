@@ -35,7 +35,7 @@ def enviar_email_verificacao(company_dto: CompanyDTO):
     try:
         token = company_dto.to_jwt()
         frontend_url = current_app.config["FRONTEND_URL"]
-        confirm_url = f"{frontend_url}/redefine-senha/{token}"
+        confirm_url = f"{frontend_url}/redefine-senha-empresa/{token}"
         html = f'<b>Bem-vindo! Por favor, confirme seu e-mail clicando <a href="{confirm_url}">aqui</a>.</b>'
         assunto = "Por favor, confirme seu e-mail"
         enviar_email(company_dto.email, assunto, html)
