@@ -2,7 +2,7 @@ import './App.css';
 import { ThemeProvider } from './providers/ThemeProvider/ThemeProvider';
 import { CssBaseline } from '@mui/material';
 import { UserProvider, useUser } from './contexts/UserContext/UserContext';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import MainLayout from './layouts/MainLayout/MainLayout';
 import OfflineLayout from './layouts/OfflineLayout/OfflineLayout';
 import Main from './screens/Main/Main';

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Container, Typography, Paper, Grid, List, ListItem, ListItemText, ListItemIcon, Divider, Box, CircularProgress, Fab } from '@mui/material';
 import { useUser } from '../../contexts/UserContext/UserContext';
 import { useNavigate } from 'react-router-dom';
